@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Clientes — Tienda Deportiva{% endblock %}
+{% block navbar_title %}<i class="fas fa-users" style="color:var(--accent-light);margin-right:8px"></i>Dashboard de Clientes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">👥 Dashboard de Clientes</h1>
+  <p class="page-subtitle">Segmentación y análisis de fidelización de clientes.</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-users"></i></div>
+    <div class="kpi-label">Clientes Únicos</div>
+    <div class="kpi-value" id="kpi-total-clientes">—</div>
+    <div class="kpi-sub">Con al menos una compra</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-star"></i></div>
+    <div class="kpi-label">Segmento Platino</div>
+    <div class="kpi-value" id="kpi-platinos">—</div>
+    <div class="kpi-sub">Clientes con más de Bs 5,000</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+    <div class="kpi-label">Segmento Oro</div>
+    <div class="kpi-value" id="kpi-oros">—</div>
+    <div class="kpi-sub">Bs 2,000 – Bs 5,000</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-medal"></i></div>
+    <div class="kpi-label">Segmento Plata</div>
+    <div class="kpi-value" id="kpi-platas">—</div>
+    <div class="kpi-sub">Menos de Bs 2,000</div>
+  </div>
+</div>
+
+<!-- Gráficos -->
+<div class="chart-grid">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-chart-pie text-accent"></i> Distribución por Segmento</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-clientes-segmento"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-trophy text-accent"></i> Top 10 Clientes por Monto</span>
+    </div>
+    <div style="overflow-y:auto;max-height:320px">
+      <table style="width:100%;font-size:0.83rem">
+        <thead>
+            <tr>
+              <th style="padding:8px 12px;color:var(--text-muted);font-size:0.7rem;
+                         text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border)">
+                Cliente</th>
+              <th style="padding:8px 12px;color:var(--text-muted);font-size:0.7rem;
+                         text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border)">
+                Segmento</th>
+              <th style="padding:8px 12px;color:var(--text-muted);font-size:0.7rem;
+                         text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border)">
+                Nivel Fidelidad</th>
+              <th style="padding:8px 12px;color:var(--text-muted);font-size:0.7rem;
+                         text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border)">
+                Compras</th>
+              <th style="padding:8px 12px;color:var(--text-muted);font-size:0.7rem;
+                         text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border)">
+                Total (Bs)</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-top-clientes-body">
+          <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px">
+            <span class="spinner"></span>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+// Actualizar KPIs tras cargar segmentos
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('/dashboard/api/clientes_segmento')
+    .then(r => r.json())
+    .then(d => {
+      const seg = {};
+      (d.segmentos?.labels || []).forEach((l, i) => {
+        seg[l] = d.segmentos.data[i];
+      });
+      const el = id => document.getElementById(id);
+      if (el('kpi-platinos')) el('kpi-platinos').textContent = seg['Platino'] || 0;
+      if (el('kpi-oros'))     el('kpi-oros').textContent     = seg['Oro']     || 0;
+      if (el('kpi-platas'))   el('kpi-platas').textContent   = seg['Plata']   || 0;
+    });
+});
+</script>
+{% endblock %}

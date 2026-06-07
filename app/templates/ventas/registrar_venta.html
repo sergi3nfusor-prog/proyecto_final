@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block title %}Registrar Venta — Tienda Deportiva{% endblock %}
+{% block navbar_title %}<i class="fas fa-cash-register" style="color:var(--accent-light);margin-right:8px"></i>Registrar Nueva Venta{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">💰 Registrar Venta</h1>
+  <p class="page-subtitle">Completa el formulario para registrar una nueva transacción en caja.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start">
+
+  <!-- Formulario principal -->
+  <div class="card">
+    <form id="form-venta" method="POST" action="{{ url_for('ventas.registrar') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <!-- Sección Cliente -->
+      <div style="margin-bottom:28px">
+        <h3 style="font-size:0.85rem;font-weight:700;color:var(--accent-light);
+                   text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;
+                   padding-bottom:10px;border-bottom:1px solid var(--border)">
+          <i class="fas fa-user"></i> Datos del Cliente
+        </h3>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="id_cliente">ID del Cliente</label>
+            <input type="number" id="id_cliente" name="id_cliente"
+                   class="form-control" placeholder="Ej: 1"
+                   value="{{ form.id_cliente.data or '' }}" min="1">
+            {% for e in form.id_cliente.errors %}
+              <p class="form-error">{{ e }}</p>
+            {% endfor %}
+          </div>
+          <button type="button" class="btn btn-secondary" id="btn-buscar-cliente"
+                  style="height:42px;white-space:nowrap">
+            <i class="fas fa-search"></i> Buscar
+          </button>
+        </div>
+        <!-- Resultado búsqueda cliente -->
+        <div id="info-cliente" style="display:none;margin-top:12px;padding:12px 16px;
+             background:rgba(192,57,43,0.06);border:1px solid var(--border-accent);
+             border-radius:var(--radius-sm)">
+          <div class="d-flex justify-between align-center">
+            <div>
+              <span id="cliente-nombre" class="fw-bold" style="font-size:0.95rem"></span>
+              <span id="cliente-nivel" class="role-badge admin" style="margin-left:8px;font-size:0.65rem"></span>
+            </div>
+            <span id="cliente-membresia" style="font-size:0.75rem"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección Producto -->
+      <div style="margin-bottom:28px">
+        <h3 style="font-size:0.85rem;font-weight:700;color:var(--accent-light);
+                   text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;
+                   padding-bottom:10px;border-bottom:1px solid var(--border)">
+          <i class="fas fa-box-open"></i> Producto
+        </h3>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="id_producto">ID del Producto</label>
+            <input type="number" id="id_producto" name="id_producto"
+                   class="form-control" placeholder="Ej: 5"
+                   value="{{ form.id_producto.data or '' }}" min="1">
+            {% for e in form.id_producto.errors %}
+              <p class="form-error">{{ e }}</p>
+            {% endfor %}
+          </div>
+          <button type="button" class="btn btn-secondary" id="btn-verificar-producto"
+                  style="height:42px;white-space:nowrap">
+            <i class="fas fa-search"></i> Verificar Stock
+          </button>
+        </div>
+        <!-- Resultado producto -->
+        <div id="info-producto" style="display:none;margin-top:12px;padding:12px 16px;
+             background:rgba(39,174,96,0.05);border:1px solid rgba(39,174,96,0.2);
+             border-radius:var(--radius-sm)">
+          <div class="d-flex justify-between">
+            <span id="producto-nombre" class="fw-bold"></span>
+            <div>
+              <span style="font-size:0.75rem;color:var(--text-muted)">Stock: </span>
+              <span id="producto-stock" class="fw-bold text-success"></span>
+              <span style="font-size:0.75rem;color:var(--text-muted);margin-left:12px">Precio: </span>
+              <span id="producto-precio" class="fw-bold text-accent"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cantidades y descuento -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
+        <div class="form-group">
+          <label class="form-label" for="cantidad">Cantidad</label>
+          <input type="number" id="cantidad" name="cantidad"
+                 class="form-control" placeholder="1"
+                 value="{{ form.cantidad.data or 1 }}" min="1">
+          {% for e in form.cantidad.errors %}
+            <p class="form-error">{{ e }}</p>
+          {% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="descuento">Descuento (Bs)</label>
+          <input type="number" id="descuento" name="descuento"
+                 class="form-control" placeholder="0.00"
+                 value="{{ form.descuento.data or '0.00' }}" min="0" step="0.01">
+          {% for e in form.descuento.errors %}
+            <p class="form-error">{{ e }}</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Datos de factura -->
+      <div style="margin-bottom:28px">
+        <h3 style="font-size:0.85rem;font-weight:700;color:var(--accent-light);
+                   text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;
+                   padding-bottom:10px;border-bottom:1px solid var(--border)">
+          <i class="fas fa-file-invoice"></i> Datos de Factura
+        </h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="form-group">
+            <label class="form-label" for="razon_social">Razón Social</label>
+            <input type="text" id="razon_social" name="razon_social"
+                   class="form-control" placeholder="S/N"
+                   value="{{ form.razon_social.data or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="nit">NIT</label>
+            <input type="text" id="nit" name="nit"
+                   class="form-control" placeholder="0"
+                   value="{{ form.nit.data or '' }}">
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-100" style="justify-content:center">
+        <i class="fas fa-cash-register"></i> Cobrar y Registrar Venta
+      </button>
+    </form>
+  </div>
+
+  <!-- Panel resumen en tiempo real -->
+  <div style="position:sticky;top:calc(var(--navbar-h) + 20px)">
+    <div class="card resumen-venta">
+      <div class="card-header" style="border-bottom:1px solid rgba(192,57,43,0.2);margin-bottom:16px;padding-bottom:14px">
+        <span class="card-title"><i class="fas fa-receipt"></i> Resumen</span>
+      </div>
+
+      <div class="resumen-row">
+        <span class="text-secondary">Precio unitario:</span>
+        <span id="res-precio">Bs 0.00</span>
+      </div>
+      <div class="resumen-row">
+        <span class="text-secondary">Cantidad:</span>
+        <span id="res-cantidad">1</span>
+      </div>
+      <div class="resumen-row">
+        <span class="text-secondary">Subtotal bruto:</span>
+        <span id="res-subtotal">Bs 0.00</span>
+      </div>
+      <div class="resumen-row">
+        <span class="text-warning">Descuento:</span>
+        <span id="res-descuento" class="text-warning">− Bs 0.00</span>
+      </div>
+      <div class="resumen-row">
+        <span class="text-secondary">Impuesto (13%):</span>
+        <span id="res-impuesto">Bs 0.00</span>
+      </div>
+      <div class="resumen-row" style="padding-top:14px;border-bottom:none">
+        <span class="fw-bold" style="font-size:0.95rem">TOTAL A COBRAR:</span>
+        <span id="res-total" class="resumen-total">Bs 0.00</span>
+      </div>
+    </div>
+
+    <!-- Info cliente -->
+    <div class="card" style="margin-top:16px">
+      <div style="font-size:0.75rem;color:var(--text-muted);font-weight:600;
+                  text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px">
+        Información del Cliente
+      </div>
+      <div id="panel-cliente-info" style="font-size:0.85rem;color:var(--text-secondary)">
+        <i class="fas fa-info-circle text-muted"></i> Busca un cliente para ver sus datos.
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let precioActual = 0;
+
+// Buscar cliente
+document.getElementById('btn-buscar-cliente')?.addEventListener('click', () => {
+  const id = document.getElementById('id_cliente').value;
+  if (!id) return;
+
+  fetch(`/ventas/api/cliente/${id}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) { alert('Cliente no encontrado: ' + d.error); return; }
+      document.getElementById('info-cliente').style.display = 'block';
+      document.getElementById('cliente-nombre').textContent = d.nombre;
+      document.getElementById('cliente-nivel').textContent  = d.nivel;
+      document.getElementById('cliente-membresia').innerHTML =
+        d.membresia
+          ? '<span class="badge-saludable">Membresía Activa ✓</span>'
+          : '<span class="text-muted">Sin membresía</span>';
+      document.getElementById('panel-cliente-info').innerHTML = `
+        <strong>${d.nombre}</strong><br>
+        Nivel: <span class="text-accent">${d.nivel}</span><br>
+        Membresía: ${d.membresia ? '<span class="text-success">Activa</span>' : '<span class="text-muted">Inactiva</span>'}
+      `;
+    })
+    .catch(() => alert('Error al buscar el cliente.'));
+});
+
+// Verificar producto
+document.getElementById('btn-verificar-producto')?.addEventListener('click', () => {
+  const id = document.getElementById('id_producto').value;
+  if (!id) return;
+
+  fetch(`/ventas/api/producto/${id}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) { alert('Producto no encontrado: ' + d.error); return; }
+      precioActual = d.precio;
+      document.getElementById('info-producto').style.display = 'block';
+      document.getElementById('producto-nombre').textContent = d.nombre;
+      document.getElementById('producto-stock').textContent  = d.stock + ' uds';
+      document.getElementById('producto-precio').textContent = `Bs ${d.precio.toFixed(2)}`;
+      document.getElementById('res-precio').textContent      = `Bs ${d.precio.toFixed(2)}`;
+      actualizarResumen();
+    })
+    .catch(() => alert('Error al verificar el producto.'));
+});
+
+// Calcular resumen en tiempo real
+function actualizarResumen() {
+  const cantidad  = parseInt(document.getElementById('cantidad').value)  || 0;
+  const descuento = parseFloat(document.getElementById('descuento').value) || 0;
+  const subtotal  = precioActual * cantidad;
+  const neto      = Math.max(0, subtotal - descuento);
+  const impuesto  = neto * 0.13;
+
+  document.getElementById('res-cantidad').textContent  = cantidad;
+  document.getElementById('res-subtotal').textContent  = `Bs ${subtotal.toFixed(2)}`;
+  document.getElementById('res-descuento').textContent = `− Bs ${descuento.toFixed(2)}`;
+  document.getElementById('res-impuesto').textContent  = `Bs ${impuesto.toFixed(2)}`;
+  document.getElementById('res-total').textContent     = `Bs ${neto.toFixed(2)}`;
+}
+
+document.getElementById('cantidad')?.addEventListener('input',  actualizarResumen);
+document.getElementById('descuento')?.addEventListener('input', actualizarResumen);
+</script>
+{% endblock %}

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tienda Deportiva — Sistema de Gestión Interna de Ventas, Inventario y Análisis.">
+  <title>{% block title %}Tienda Deportiva{% endblock %}</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
+  <!-- CSS propio -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+{% set hide_sidebar = hide_sidebar | default(false) %}
+
+{% if not hide_sidebar and current_user.is_authenticated %}
+<div class="app-layout">
+
+  <!-- ══ SIDEBAR ════════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="fas fa-running"></i></div>
+      <div class="brand-text">
+        <span class="brand-name">Tienda Deportiva</span>
+        <span class="brand-sub">Sistema de Gestión</span>
+      </div>
+    </div>
+
+    <nav>
+      <!-- General -->
+      <div class="nav-group">
+        <div class="nav-group-label">General</div>
+        <a href="{{ url_for('dashboard.ejecutivo') }}"
+           class="nav-item {% if request.endpoint == 'dashboard.ejecutivo' %}active{% endif %}">
+          <i class="fas fa-home nav-icon"></i> Inicio
+        </a>
+      </div>
+
+      <!-- Ventas -->
+      {% if current_user.rol in ['vendedor', 'admin'] %}
+      <div class="nav-group">
+        <div class="nav-group-label">Ventas</div>
+        <a href="{{ url_for('ventas.registrar') }}"
+           class="nav-item {% if request.endpoint == 'ventas.registrar' %}active{% endif %}">
+          <i class="fas fa-cash-register nav-icon"></i> Registrar Venta
+        </a>
+        <a href="{{ url_for('ventas.historial') }}"
+           class="nav-item {% if request.endpoint == 'ventas.historial' %}active{% endif %}">
+          <i class="fas fa-list-alt nav-icon"></i> Historial Ventas
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Inventario -->
+      {% if current_user.rol in ['almacen', 'admin'] %}
+      <div class="nav-group">
+        <div class="nav-group-label">Inventario</div>
+        <a href="{{ url_for('inventario.productos') }}"
+           class="nav-item {% if request.endpoint == 'inventario.productos' %}active{% endif %}">
+          <i class="fas fa-boxes nav-icon"></i> Productos
+        </a>
+        <a href="{{ url_for('inventario.alertas') }}"
+           class="nav-item {% if request.endpoint == 'inventario.alertas' %}active{% endif %}">
+          <i class="fas fa-exclamation-triangle nav-icon"></i> Alertas de Stock
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Dashboard (solo admin) -->
+      {% if current_user.rol == 'admin' %}
+      <div class="nav-group">
+        <div class="nav-group-label">Analytics</div>
+        <a href="{{ url_for('dashboard.ejecutivo') }}"
+           class="nav-item {% if request.endpoint == 'dashboard.ejecutivo' %}active{% endif %}">
+          <i class="fas fa-chart-line nav-icon"></i> Dashboard Ejecutivo
+        </a>
+        <a href="{{ url_for('dashboard.clientes') }}"
+           class="nav-item {% if request.endpoint == 'dashboard.clientes' %}active{% endif %}">
+          <i class="fas fa-users nav-icon"></i> Dashboard Clientes
+        </a>
+        <a href="{{ url_for('dashboard.productos') }}"
+           class="nav-item {% if request.endpoint == 'dashboard.productos' %}active{% endif %}">
+          <i class="fas fa-tag nav-icon"></i> Dashboard Productos
+        </a>
+      </div>
+      {% endif %}
+    </nav>
+
+    <!-- Footer sidebar -->
+    <div class="sidebar-footer">
+      <a href="{{ url_for('auth.logout') }}" class="nav-item">
+        <i class="fas fa-sign-out-alt nav-icon"></i> Cerrar Sesión
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══ CONTENIDO PRINCIPAL ════════════════════════════════════ -->
+  <div class="main-content">
+
+    <!-- Navbar superior -->
+    <header class="navbar-top">
+      <div class="navbar-left">
+        <button class="btn btn-secondary btn-sm" id="btn-toggle-sidebar"
+                style="padding:8px 10px;" title="Alternar sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <span class="navbar-title">{% block navbar_title %}{% endblock %}</span>
+      </div>
+      <div class="navbar-right">
+        <!-- Nombre + rol -->
+        <div class="user-badge">
+          <div class="user-avatar">
+            {{ current_user.nombreUsuario[0]|upper }}
+          </div>
+          <div class="user-info">
+            <span class="user-name">{{ current_user.nombreUsuario }}</span>
+            <span class="user-role">
+              {% if current_user.empleado %}
+                {{ current_user.empleado.nombre }} {{ current_user.empleado.apellidoPaterno }}
+              {% else %}
+                Administrador
+              {% endif %}
+            </span>
+          </div>
+          <span class="role-badge {{ current_user.rol }}">{{ current_user.rol }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Flash messages -->
+    <div class="flash-container" id="flash-container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        {% set icon = {'success':'check-circle','danger':'exclamation-circle','warning':'exclamation-triangle','info':'info-circle'} %}
+        {% set titles = {'success':'Éxito','danger':'Error','warning':'Advertencia','info':'Información'} %}
+        <div class="flash-msg {{ category }}" onclick="this.classList.add('dismissing')">
+          <i class="fas fa-{{ icon.get(category, 'info-circle') }} flash-icon"></i>
+          <div class="flash-body">
+            <span class="flash-title">{{ titles.get(category, 'Aviso') }}</span>
+            <span class="flash-text">{{ message }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+
+    <!-- Contenido de página -->
+    <main class="page-content">
+{% else %}
+  <!-- Página sin sidebar (login) -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div style="position:fixed;top:16px;right:16px;z-index:9999;max-width:380px;display:flex;flex-direction:column;gap:10px">
+      {% for category, message in messages %}
+        <div class="flash-msg {{ category }}" onclick="this.classList.add('dismissing')">
+          <i class="fas fa-info-circle flash-icon"></i>
+          <div class="flash-body">
+            <span class="flash-title">{{ message }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+{% endif %}
+
+  <!-- >>> EL BLOQUE DE CONTENIDO DEBE SER ÚNICO EN EL ARCHIVO <<< -->
+  {% block content %}{% endblock %}
+
+{% if not hide_sidebar and current_user.is_authenticated %}
+    </main>
+
+  </div><!-- /main-content -->
+
+</div><!-- /app-layout -->
+{% endif %}
+
+<!-- ══ CDNs JS ════════════════════════════════════════════════════ -->
+<!-- jQuery (requerido por DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- DataTables JS + Buttons -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Auto-cerrar flash msgs después de 4s -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const msgs = document.querySelectorAll('.flash-msg');
+  msgs.forEach(msg => {
+    setTimeout(() => {
+      msg.classList.add('dismissing');
+      setTimeout(() => msg.remove(), 350);
+    }, 4000);
+  });
+
+  // Toggle sidebar
+  const btnToggle = document.getElementById('btn-toggle-sidebar');
+  const sidebar   = document.getElementById('sidebar');
+  if (btnToggle && sidebar) {
+    btnToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+  }
+});
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

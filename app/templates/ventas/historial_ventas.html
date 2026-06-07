@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Historial de Ventas — Tienda Deportiva{% endblock %}
+{% block navbar_title %}<i class="fas fa-list-alt" style="color:var(--accent-light);margin-right:8px"></i>Historial de Ventas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📋 Historial de Ventas</h1>
+  <p class="page-subtitle">Consulta y filtra el registro completo de transacciones.</p>
+</div>
+
+<!-- KPI del día -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:24px">
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-calendar-day"></i></div>
+    <div class="kpi-label">Total Vendido Hoy</div>
+    <div class="kpi-value" id="kpi-total-dia">Bs —</div>
+    <div class="kpi-sub">{{ "" }}</div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label>Fecha inicio</label>
+    <input type="date" id="filtro-fecha-inicio" class="form-control" style="width:180px">
+  </div>
+  <div class="filter-group">
+    <label>Fecha fin</label>
+    <input type="date" id="filtro-fecha-fin" class="form-control" style="width:180px">
+  </div>
+  <div style="margin-top:20px">
+    <button class="btn btn-primary" id="btn-filtrar-historial">
+      <i class="fas fa-filter"></i> Filtrar
+    </button>
+  </div>
+</div>
+
+<!-- Tabla historial -->
+<div class="card">
+  <div id="tabla-historial-wrapper">
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <span class="spinner"></span>
+      <p style="margin-top:12px">Cargando historial…</p>
+    </div>
+  </div>
+  <table id="tabla-historial" class="display w-100" style="width:100%;display:none">
+    <thead>
+      <tr>
+        <th>ID Venta</th>
+        <th>Fecha</th>
+        <th>Cliente</th>
+        <th>Monto Total</th>
+        <th>Descuento</th>
+        <th>Impuesto</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/datatables.js') }}"></script>
+{% endblock %}

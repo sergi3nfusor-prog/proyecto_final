@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Alertas de Stock — Tienda Deportiva{% endblock %}
+{% block navbar_title %}<i class="fas fa-exclamation-triangle" style="color:#f39c12;margin-right:8px"></i>Alertas de Stock{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-between align-center">
+  <div>
+    <h1 class="page-title">⚠️ Alertas de Stock Bajo</h1>
+    <p class="page-subtitle">Productos que requieren reposición inmediata.</p>
+  </div>
+  <div class="kpi-card" style="padding:16px 24px;width:auto">
+    <div class="kpi-label">Productos en Alerta</div>
+    <div class="kpi-value text-danger" id="kpi-alertas-total">—</div>
+  </div>
+</div>
+
+<!-- Cards de alertas -->
+<div id="alertas-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;margin-top:24px">
+  <div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1">
+    <span class="spinner"></span>
+    <p style="margin-top:12px">Cargando alertas…</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/datatables.js') }}"></script>
+{% endblock %}

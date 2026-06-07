@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Catálogo de Productos — Tienda Deportiva{% endblock %}
+{% block navbar_title %}<i class="fas fa-boxes" style="color:var(--accent-light);margin-right:8px"></i>Catálogo de Productos{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📦 Catálogo de Productos</h1>
+  <p class="page-subtitle">Consulta el stock e información de todos los productos.</p>
+</div>
+
+<!-- Filtros -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label>Marca</label>
+    <input type="text" id="filtro-marca" class="form-control"
+           style="width:180px" placeholder="Ej: Nike">
+  </div>
+  <div style="margin-top:20px">
+    <button class="btn btn-primary" id="btn-filtrar-productos">
+      <i class="fas fa-filter"></i> Filtrar
+    </button>
+  </div>
+</div>
+
+<!-- Tabla de productos -->
+<div class="card">
+  <div id="tabla-productos-wrapper">
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <span class="spinner"></span>
+      <p style="margin-top:12px">Cargando productos…</p>
+    </div>
+  </div>
+  <table id="tabla-productos" class="display w-100" style="width:100%;display:none">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Producto</th>
+        <th>Marca</th>
+        <th>Precio</th>
+        <th>Talla</th>
+        <th>Temporada</th>
+        <th>Stock</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/datatables.js') }}"></script>
+{% endblock %}

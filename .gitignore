@@ -1,0 +1,36 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Variables de entorno (contiene credenciales)
+.env
+
+# Cachés de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Migraciones generadas (versiones)
+migrations/versions/*.py
+
+# Base de datos local
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini

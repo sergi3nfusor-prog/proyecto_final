@@ -1,0 +1,107 @@
+{% set hide_sidebar = true %}
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión — Tienda Deportiva{% endblock %}
+
+{% block content %}
+<div class="login-page">
+  <div class="login-card">
+
+    <!-- Logo -->
+    <div class="login-logo">
+      <div class="logo-icon"><i class="fas fa-running"></i></div>
+      <h1>Tienda Deportiva</h1>
+      <p>Sistema de Gestión Interno</p>
+    </div>
+
+    <div class="login-divider"></div>
+
+    <!-- Formulario -->
+    <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <!-- Usuario -->
+      <div class="form-group">
+        <label class="form-label" for="username">
+          <i class="fas fa-user" style="margin-right:6px;color:var(--accent-light)"></i>
+          Usuario
+        </label>
+        <div style="position:relative">
+          <input type="text" id="username" name="username"
+                 class="form-control"
+                 placeholder="Ingresa tu nombre de usuario"
+                 value="{{ form.username.data or '' }}"
+                 autocomplete="username" autofocus>
+        </div>
+        {% if form.username.errors %}
+          {% for error in form.username.errors %}
+            <p class="form-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- Contraseña -->
+      <div class="form-group">
+        <label class="form-label" for="password">
+          <i class="fas fa-lock" style="margin-right:6px;color:var(--accent-light)"></i>
+          Contraseña
+        </label>
+        <div style="position:relative">
+          <input type="password" id="password" name="password"
+                 class="form-control"
+                 placeholder="Ingresa tu contraseña"
+                 autocomplete="current-password">
+          <button type="button" id="btn-toggle-pass"
+                  style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+                         background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.9rem;">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        {% if form.password.errors %}
+          {% for error in form.password.errors %}
+            <p class="form-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- Recordarme -->
+      <div class="form-group">
+        <label class="checkbox-group">
+          <input type="checkbox" name="remember" id="remember"
+                 {% if form.remember.data %}checked{% endif %}>
+          <span>Mantener sesión iniciada</span>
+        </label>
+      </div>
+
+      <!-- Botón submit -->
+      <button type="submit" class="btn btn-primary w-100 btn-lg"
+              style="width:100%;justify-content:center;margin-top:8px">
+        <i class="fas fa-sign-in-alt"></i> Ingresar al Sistema
+      </button>
+    </form>
+
+    <div class="login-divider"></div>
+    <p class="text-center text-muted" style="font-size:0.75rem">
+      <i class="fas fa-shield-alt"></i>
+      Acceso solo para personal autorizado
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Toggle ver/ocultar contraseña
+document.getElementById('btn-toggle-pass')?.addEventListener('click', function() {
+  const inp = document.getElementById('password');
+  const ico = this.querySelector('i');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    ico.classList.replace('fa-eye', 'fa-eye-slash');
+  } else {
+    inp.type = 'password';
+    ico.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+});
+</script>
+{% endblock %}

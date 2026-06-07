@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Ejecutivo — Tienda Deportiva{% endblock %}
+{% block navbar_title %}<i class="fas fa-chart-line" style="color:var(--accent-light);margin-right:8px"></i>Dashboard Ejecutivo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📊 Dashboard Ejecutivo</h1>
+  <p class="page-subtitle">Visión completa del rendimiento de ventas y sucursales.</p>
+</div>
+
+<!-- Filtros -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label>Año</label>
+    <select id="filtro-anio" class="form-select" style="width:130px">
+      <option value="">Todos</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Ciudad</label>
+    <select id="filtro-ciudad" class="form-select" style="width:160px">
+      <option value="">Todas</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Sucursal</label>
+    <select id="filtro-sucursal" class="form-select" style="width:200px">
+      <option value="">Todas</option>
+    </select>
+  </div>
+  <div style="margin-top:20px">
+    <button id="btn-aplicar-filtros" class="btn btn-primary">
+      <i class="fas fa-filter"></i> Aplicar Filtros
+    </button>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div>
+    <div class="kpi-label">Ventas del Año</div>
+    <div class="kpi-value" id="kpi-total-mes">—</div>
+    <div class="kpi-sub">Monto total en el período</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-shopping-cart"></i></div>
+    <div class="kpi-label">Transacciones</div>
+    <div class="kpi-value" id="kpi-transacciones">—</div>
+    <div class="kpi-sub">Total de ventas registradas</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-receipt"></i></div>
+    <div class="kpi-label">Ticket Promedio</div>
+    <div class="kpi-value" id="kpi-ticket-promedio">—</div>
+    <div class="kpi-sub">Por transacción</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon"><i class="fas fa-tag"></i></div>
+    <div class="kpi-label">Descuentos del Mes</div>
+    <div class="kpi-value" id="kpi-total-descuentos">—</div>
+    <div class="kpi-sub">Mes actual</div>
+  </div>
+</div>
+
+<!-- Gráficos fila 1 -->
+<div class="chart-grid">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-chart-line text-accent"></i> Ventas por Mes</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-ventas-mes"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-store text-accent"></i> Recaudación por Sucursal</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-sucursales"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla OLAP -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">
+      <i class="fas fa-table text-accent"></i>
+      Inteligencia de Negocio 360°
+    </span>
+    <span class="text-muted" style="font-size:0.75rem">Tabla OLAP con filtros interactivos</span>
+  </div>
+  <div id="tabla-olap-wrapper">
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <span class="spinner"></span>
+      <p style="margin-top:12px">Cargando datos OLAP…</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/datatables.js') }}"></script>
+{% endblock %}
