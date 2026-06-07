@@ -80,8 +80,21 @@ def login():
             log_access("login", f"Acceso exitoso — rol: {usuario.rol}", user=usuario)
             db.session.commit()
             flash(f"¡Bienvenido, {usuario.nombreUsuario}! 👋", "success")
+
+            # Redirigir al next solo si el usuario tiene permiso según su rol
             next_page = request.args.get("next")
-            return redirect(next_page or url_for("dashboard.ejecutivo"))
+
+            # Determinar página de inicio según rol
+            if usuario.rol == "admin":
+                default_page = url_for("dashboard.ejecutivo")
+            elif usuario.rol == "vendedor":
+                default_page = url_for("ventas.registrar")
+            elif usuario.rol == "almacen":
+                default_page = url_for("inventario.productos")
+            else:
+                default_page = url_for("ventas.historial")
+
+            return redirect(next_page or default_page)
         else:
             log_access(
                 "login_failed",

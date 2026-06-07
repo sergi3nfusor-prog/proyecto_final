@@ -81,6 +81,7 @@ def _get_empleado_id():
 
 @ventas_bp.route("/historial")
 @login_required
+@role_required("vendedor", "admin")
 def historial():
     return render_template("ventas/historial_ventas.html")
 

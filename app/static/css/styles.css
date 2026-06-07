@@ -745,14 +745,32 @@ tbody td { padding: 12px 16px; color: var(--text-primary); vertical-align: middl
 
 .checkbox-group span { font-size: 0.85rem; color: var(--text-secondary); }
 
+/* ── Overlay sidebar (mobile) ─────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+  transition: opacity var(--transition);
+  opacity: 0;
+}
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .sidebar {
     transform: translateX(-100%);
+    z-index: 1000;
   }
 
   .sidebar.open {
     transform: translateX(0);
+    box-shadow: 8px 0 40px rgba(0,0,0,0.6);
   }
 
   .main-content {
@@ -766,12 +784,29 @@ tbody td { padding: 12px 16px; color: var(--text-primary); vertical-align: middl
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .filters-bar {
+    gap: 12px;
+  }
+
+  .navbar-top {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .page-content { padding: 16px; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .user-info { display: none; }
 }
 
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr; }
-  .page-content { padding: 16px; }
+  .page-content { padding: 12px; }
   .login-card { padding: 32px 24px; }
+  .filters-bar { flex-direction: column; align-items: stretch; }
+  .filter-group select { width: 100% !important; }
 }
 
 /* ── Utils ────────────────────────────────────────────────────── */

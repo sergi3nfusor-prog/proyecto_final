@@ -48,17 +48,22 @@ function badgeAlerta(alerta) {
 // ────────────────────────────────────────────────────────────────
 // 1. TABLA OLAP — Dashboard Ejecutivo (#tabla-olap)
 // ────────────────────────────────────────────────────────────────
-function initTablaOlap() {
+window.recargarTablaOlap = function(params = null) {
   const wrapper = document.getElementById("tabla-olap-wrapper");
-  if (!wrapper) return;
+  if (!wrapper) return Promise.resolve();
 
-  const filtros = new URLSearchParams({
-    anio:     document.getElementById("filtro-anio")?.value     || "",
-    ciudad:   document.getElementById("filtro-ciudad")?.value   || "",
-    sucursal: document.getElementById("filtro-sucursal")?.value || "",
-  });
+  let qs = params;
+  if (!qs) {
+    qs = new URLSearchParams({
+      anio:     document.getElementById("filtro-anio")?.value     || "",
+      ciudad:   document.getElementById("filtro-ciudad")?.value   || "",
+      sucursal: document.getElementById("filtro-sucursal")?.value || "",
+    }).toString();
+  } else if (params instanceof URLSearchParams) {
+    qs = params.toString();
+  }
 
-  fetch(`/dashboard/api/tabla_olap?${filtros}`)
+  return fetch(`/dashboard/api/tabla_olap?${qs}`)
     .then(r => r.json())
     .then(({ columns, data }) => {
       // Construir tabla dinámicamente
@@ -101,7 +106,7 @@ function initTablaOlap() {
     .catch(err => {
       wrapper.innerHTML = `<p class="text-danger">Error cargando datos OLAP: ${err.message}</p>`;
     });
-}
+};
 
 // ────────────────────────────────────────────────────────────────
 // 2. TABLA HISTORIAL DE VENTAS (#tabla-historial)
@@ -304,7 +309,7 @@ function initTablaAlertas() {
 // INICIALIZACIÓN
 // ────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  initTablaOlap();
+  if (window.recargarTablaOlap) window.recargarTablaOlap();
   initTablaHistorial();
   initTablaProductos();
   initTablaAlertas();

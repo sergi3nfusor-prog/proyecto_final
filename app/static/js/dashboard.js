@@ -398,6 +398,7 @@ function inicializarFiltros() {
       cargarSucursales(params),
       cargarStockSalud(params),
       cargarTopProductos(params),
+      window.recargarTablaOlap ? window.recargarTablaOlap(params) : Promise.resolve(),
     ]).finally(() => {
       btn.innerHTML = '<i class="fas fa-filter"></i> Aplicar Filtros';
       btn.disabled = false;
@@ -418,6 +419,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   cargarSucursales(params);
   cargarStockSalud(params);
   cargarTopProductos(params);
+  if (window.recargarTablaOlap) window.recargarTablaOlap(params);
 
   inicializarFiltros();
 });

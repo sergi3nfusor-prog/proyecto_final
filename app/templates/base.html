@@ -44,10 +44,22 @@
       <!-- General -->
       <div class="nav-group">
         <div class="nav-group-label">General</div>
+        {% if current_user.rol == 'admin' %}
         <a href="{{ url_for('dashboard.ejecutivo') }}"
            class="nav-item {% if request.endpoint == 'dashboard.ejecutivo' %}active{% endif %}">
           <i class="fas fa-home nav-icon"></i> Inicio
         </a>
+        {% elif current_user.rol == 'vendedor' %}
+        <a href="{{ url_for('ventas.registrar') }}"
+           class="nav-item {% if request.endpoint == 'ventas.registrar' %}active{% endif %}">
+          <i class="fas fa-home nav-icon"></i> Inicio
+        </a>
+        {% elif current_user.rol == 'almacen' %}
+        <a href="{{ url_for('inventario.productos') }}"
+           class="nav-item {% if request.endpoint == 'inventario.productos' %}active{% endif %}">
+          <i class="fas fa-home nav-icon"></i> Inicio
+        </a>
+        {% endif %}
       </div>
 
       <!-- Ventas -->
@@ -107,6 +119,9 @@
       </a>
     </div>
   </aside>
+
+  <!-- Overlay para cerrar sidebar en mobile -->
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
   <!-- ══ CONTENIDO PRINCIPAL ════════════════════════════════════ -->
   <div class="main-content">
@@ -213,11 +228,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 4000);
   });
 
-  // Toggle sidebar
+  // Toggle sidebar con overlay para mobile
   const btnToggle = document.getElementById('btn-toggle-sidebar');
   const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+  function closeSidebar() {
+    sidebar?.classList.remove('open');
+    overlay?.classList.remove('active');
+  }
+  function openSidebar() {
+    sidebar?.classList.add('open');
+    overlay?.classList.add('active');
+  }
   if (btnToggle && sidebar) {
-    btnToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+    btnToggle.addEventListener('click', () => {
+      if (sidebar.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+  }
+  if (overlay) {
+    overlay.addEventListener('click', closeSidebar);
   }
 });
 </script>
