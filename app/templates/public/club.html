@@ -1,0 +1,92 @@
+{% extends "public/layout.html" %}
+
+{% block title %}Sport Zone | Club de Fidelización{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <div class="section-label">Club Exclusivo</div>
+        <h1 class="section-title">Sport Zone Club</h1>
+        <p class="section-subtitle">Únete a la élite. Acumula puntos con cada compra y desbloquea beneficios exclusivos.</p>
+    </div>
+
+    <!-- Membership Tiers -->
+    <div class="tier-cards">
+        <div class="tier-card tier-bronze animate-on-scroll">
+            <div class="tier-icon">🥉</div>
+            <div class="tier-name" style="color: #cd7f32;">Bronze</div>
+            <div class="tier-desc">
+                Acceso a preventas exclusivas y acumulación de puntos básica. Ideal para comenzar tu camino.
+            </div>
+        </div>
+
+        <div class="tier-card tier-silver animate-on-scroll">
+            <div class="tier-icon">🥈</div>
+            <div class="tier-name" style="color: #c0c0c0;">Silver</div>
+            <div class="tier-desc">
+                Envíos gratis en todas tus compras, 5% de descuento adicional y acceso anticipado a promociones.
+            </div>
+        </div>
+
+        <div class="tier-card tier-gold animate-on-scroll">
+            <div class="tier-icon">🥇</div>
+            <div class="tier-name" style="color: #ffd700;">Gold</div>
+            <div class="tier-desc">
+                Asesoría deportiva personalizada, 15% de descuento permanente y eventos VIP exclusivos.
+            </div>
+        </div>
+    </div>
+
+    <!-- Club Stats -->
+    <div style="text-align: center; margin-bottom: 3rem;" class="animate-on-scroll">
+        <div class="stat-number counter" data-target="{{ total_miembros }}" style="font-size: 4rem;">0</div>
+        <div class="stat-label" style="font-size: 1rem;">Miembros Activos en el Club</div>
+    </div>
+
+    <!-- Leaderboard -->
+    {% if club_data and club_data|length > 0 %}
+    <div class="animate-on-scroll">
+        <div class="section-header" style="margin-bottom: 2rem;">
+            <div class="section-label">Ranking</div>
+            <h2 class="section-title">Miembros Destacados</h2>
+        </div>
+
+        <div class="leaderboard">
+            {% for member in club_data %}
+            <div class="leaderboard-item animate-on-scroll">
+                <div class="leaderboard-rank">#{{ loop.index }}</div>
+                <div class="leaderboard-name">
+                    <h4>{{ member.nombre }} {{ member.apellidopaterno or '' }}</h4>
+                    <span>
+                        Nivel: 
+                        {% if member.nivel == 'Gold' %}
+                            <span style="color: #ffd700;">{{ member.nivel }}</span>
+                        {% elif member.nivel == 'Silver' %}
+                            <span style="color: #c0c0c0;">{{ member.nivel }}</span>
+                        {% else %}
+                            <span style="color: #cd7f32;">{{ member.nivel }}</span>
+                        {% endif %}
+                        {% if member.fechaultimacompra %}
+                            · Última compra: {{ member.fechaultimacompra }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="leaderboard-points">{{ member.puntosacumulados or member.puntosfidelizacion or 0 }} PTS</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem 2rem; color: var(--text-muted);" class="animate-on-scroll">
+        <h2>Sé el primero en unirte</h2>
+        <p>Registra tu primera compra y empieza a acumular puntos.</p>
+        <a href="{{ url_for('public.productos') }}" class="btn-primary" style="margin-top: 1.5rem;">Explorar Productos</a>
+    </div>
+    {% endif %}
+
+    <!-- CTA -->
+    <div style="text-align: center; margin-top: 4rem;" class="animate-on-scroll">
+        <a href="{{ url_for('public.mensajes') }}" class="btn-secondary">¿Preguntas sobre el Club? Contáctanos →</a>
+    </div>
+</section>
+{% endblock %}

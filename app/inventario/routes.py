@@ -3,7 +3,7 @@ from flask_login import login_required
 from sqlalchemy import text
 
 from app import db
-from app.models import Producto, Inventario
+from app.models import Producto, Inventario, Categoria
 from app.auth.routes import role_required
 
 inventario_bp = Blueprint("inventario", __name__)
@@ -15,7 +15,7 @@ inventario_bp = Blueprint("inventario", __name__)
 
 @inventario_bp.route("/productos")
 @login_required
-@role_required("almacen", "admin")
+@role_required("empleado", "gerente", "admin")
 def productos():
     return render_template("inventario/productos.html")
 
@@ -26,7 +26,7 @@ def productos():
 
 @inventario_bp.route("/alertas")
 @login_required
-@role_required("almacen", "admin")
+@role_required("empleado", "gerente", "admin")
 def alertas():
     return render_template("inventario/alertas_stock.html")
 
@@ -37,11 +37,12 @@ def alertas():
 
 @inventario_bp.route("/api/productos")
 @login_required
+@role_required("empleado", "gerente", "admin")
 def api_productos():
     marca    = request.args.get("marca", "")
     categoria = request.args.get("categoria", "")
 
-    rows = (
+    query = (
         db.session.query(
             Producto.IDProducto,
             Producto.nombreProducto,
@@ -54,19 +55,23 @@ def api_productos():
             Inventario.stockMaximo,
         )
         .join(Inventario, Producto.IDInventario == Inventario.IDInventario)
-        .filter(
-            Producto.marca.ilike(f"%{marca}%") if marca else True,
-        )
-        .order_by(Inventario.stockActual.asc())
-        .limit(500)
-        .all()
+        .outerjoin(Categoria, Categoria.IDProducto == Producto.IDProducto)
+        .distinct()
     )
+    if marca:
+        query = query.filter(Producto.marca.ilike(f"%{marca}%"))
+    if categoria:
+        query = query.filter(Categoria.nombreCategoria.ilike(f"%{categoria}%"))
+    rows = query.order_by(Inventario.stockActual.asc()).limit(500).all()
 
     data = []
     for r in rows:
-        if r.stockActual <= r.stockMinimo:
+        stock_actual = r.stockActual or 0
+        stock_minimo = r.stockMinimo or 0
+
+        if stock_actual <= stock_minimo:
             alerta = "REPOSICIÓN INMEDIATA"
-        elif r.stockActual <= (r.stockMinimo * 1.5 if r.stockMinimo else 0):
+        elif stock_actual <= (stock_minimo * 1.5):
             alerta = "RIESGO BAJO"
         else:
             alerta = "STOCK SALUDABLE"
@@ -78,7 +83,7 @@ def api_productos():
             "precio":   float(r.precio or 0),
             "talla":    r.talla,
             "temporada": r.temporada,
-            "stock":    r.stockActual,
+            "stock":    r.stockActual or 0,
             "min":      r.stockMinimo,
             "max":      r.stockMaximo,
             "alerta":   alerta,
@@ -93,6 +98,7 @@ def api_productos():
 
 @inventario_bp.route("/api/stock_bajo")
 @login_required
+@role_required("empleado", "gerente", "admin")
 def api_stock_bajo():
     try:
         rows = db.session.execute(
@@ -118,6 +124,7 @@ def api_stock_bajo():
 
 @inventario_bp.route("/api/valor_producto/<int:id_producto>")
 @login_required
+@role_required("empleado", "gerente", "admin")
 def api_valor_producto(id_producto):
     try:
         valor = db.session.execute(

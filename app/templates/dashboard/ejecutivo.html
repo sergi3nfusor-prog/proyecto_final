@@ -17,6 +17,24 @@
     </select>
   </div>
   <div class="filter-group">
+    <label>Mes</label>
+    <select id="filtro-mes" class="form-select" style="width:130px">
+      <option value="">Todos</option>
+      <option value="1">Enero</option>
+      <option value="2">Febrero</option>
+      <option value="3">Marzo</option>
+      <option value="4">Abril</option>
+      <option value="5">Mayo</option>
+      <option value="6">Junio</option>
+      <option value="7">Julio</option>
+      <option value="8">Agosto</option>
+      <option value="9">Septiembre</option>
+      <option value="10">Octubre</option>
+      <option value="11">Noviembre</option>
+      <option value="12">Diciembre</option>
+    </select>
+  </div>
+  <div class="filter-group">
     <label>Ciudad</label>
     <select id="filtro-ciudad" class="form-select" style="width:160px">
       <option value="">Todas</option>
@@ -79,6 +97,26 @@
     </div>
     <div class="chart-container">
       <canvas id="chart-sucursales"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Gráficos fila 2 -->
+<div class="chart-grid">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-tag text-accent"></i> Ventas por Marca</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-ventas-marca"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-user-plus text-accent"></i> Clientes Nuevos por Mes</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-clientes-nuevos"></canvas>
     </div>
   </div>
 </div>

@@ -1,0 +1,82 @@
+{% extends "public/layout.html" %}
+
+{% block title %}Sport Zone | Nuestras Sedes{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <div class="section-label">Sucursales</div>
+        <h1 class="section-title">Nuestras Sedes</h1>
+        <p class="section-subtitle">Encuentra tu tienda Sport Zone más cercana y vive la experiencia premium.</p>
+    </div>
+
+    <!-- Hero Image -->
+    <div class="sedes-hero animate-on-scroll">
+        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80" 
+             alt="Tienda Sport Zone">
+    </div>
+
+    {% if sedes and sedes|length > 0 %}
+    <div class="sedes-grid">
+        {% for sede in sedes %}
+        <div class="sede-card animate-on-scroll">
+            <div class="sede-name">{{ sede.nombresucursal }}</div>
+            <div class="sede-location">📍 {{ sede.pais }} — {{ sede.ciudad }}</div>
+
+            <div class="sede-detail">
+                <span class="sede-detail-icon">🏠</span>
+                <div>
+                    <span class="sede-detail-label">Dirección </span>
+                    <span class="sede-detail-value">{{ sede.calle }}{% if sede.numeroprovincia %}, {{ sede.numeroprovincia }}{% endif %}</span>
+                </div>
+            </div>
+
+            <div class="sede-detail">
+                <span class="sede-detail-icon">🕐</span>
+                <div>
+                    <span class="sede-detail-label">Horario </span>
+                    <span class="sede-detail-value">{{ sede.horarioatencion }}</span>
+                </div>
+            </div>
+
+            <div class="sede-detail">
+                <span class="sede-detail-icon">📞</span>
+                <div>
+                    <span class="sede-detail-label">Teléfono </span>
+                    <span class="sede-detail-value">{{ sede.telefono or 'No disponible' }}</span>
+                </div>
+            </div>
+
+            <div class="sede-detail">
+                <span class="sede-detail-icon">✉️</span>
+                <div>
+                    <span class="sede-detail-label">Email </span>
+                    <span class="sede-detail-value">{{ sede.correo or 'No disponible' }}</span>
+                </div>
+            </div>
+
+            <a href="https://www.google.com/maps/search/{{ sede.calle }} {{ sede.ciudad }} {{ sede.pais }}" 
+               target="_blank" class="btn-primary" style="margin-top: 1.5rem; width: 100%; font-size: 0.85rem;">
+                Ver en Google Maps →
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 4rem 2rem; color: var(--text-muted);" class="animate-on-scroll">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🏬</div>
+        <h2>Información de sucursales próximamente</h2>
+        <p style="margin-top: 0.5rem;">Estamos actualizando la información de nuestras sedes.</p>
+    </div>
+    {% endif %}
+
+    <!-- CTA -->
+    <div style="text-align: center; margin-top: 4rem;" class="animate-on-scroll">
+        <div class="glass-card" style="text-align: center;">
+            <h3 style="margin-bottom: 1rem;">¿No encuentras tu sede?</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Escríbenos y te ayudamos a encontrar la tienda más cercana.</p>
+            <a href="{{ url_for('public.mensajes') }}" class="btn-primary">Contactar →</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -833,3 +833,7 @@ tbody td { padding: 12px 16px; color: var(--text-primary); vertical-align: middl
 .w-100         { width: 100%; }
 .text-center   { text-align: center; }
 .fs-sm         { font-size: 0.8rem; }
+
+.role-badge.usuario  { background: rgba(149,165,166,0.2); color: #95a5a6; border: 1px solid rgba(149,165,166,0.4); }
+.role-badge.empleado { background: rgba(39,174,96,0.2);  color: #27ae60; border: 1px solid rgba(39,174,96,0.4); }
+.role-badge.gerente  { background: rgba(41,128,185,0.2); color: #2980b9; border: 1px solid rgba(41,128,185,0.4); }

@@ -38,24 +38,24 @@
 <!-- Tabla historial -->
 <div class="card">
   <div id="tabla-historial-wrapper">
-    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+    <div id="spinner-historial" style="text-align:center;padding:40px;color:var(--text-muted)">
       <span class="spinner"></span>
       <p style="margin-top:12px">Cargando historial…</p>
     </div>
+    <table id="tabla-historial" class="display w-100" style="width:100%;display:none">
+      <thead>
+        <tr>
+          <th>ID Venta</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Monto Total</th>
+          <th>Descuento</th>
+          <th>Impuesto</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
-  <table id="tabla-historial" class="display w-100" style="width:100%;display:none">
-    <thead>
-      <tr>
-        <th>ID Venta</th>
-        <th>Fecha</th>
-        <th>Cliente</th>
-        <th>Monto Total</th>
-        <th>Descuento</th>
-        <th>Impuesto</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
 </div>
 {% endblock %}
 

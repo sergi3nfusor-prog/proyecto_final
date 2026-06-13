@@ -1,0 +1,124 @@
+{% extends "public/layout.html" %}
+
+{% block title %}Sport Zone | Inicio — Equipamiento Deportivo Premium{% endblock %}
+
+{% block content %}
+<!-- ========== HERO SECTION ========== -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-badge">
+            <span>Temporada 2026 — Nuevas Colecciones</span>
+        </div>
+
+        <h1>Impulsa tu rendimiento, <span class="accent">domina el juego</span></h1>
+
+        <p class="hero-subtitle">
+            Equipamiento deportivo de alta calidad que potencia tu rendimiento, 
+            con productos seleccionados para cada nivel, combinando tecnología, 
+            estilo y precios accesibles.
+        </p>
+
+        <div class="hero-actions">
+            <a href="{{ url_for('public.productos') }}" class="btn-primary">Explorar Catálogo →</a>
+            <a href="{{ url_for('public.club') }}" class="btn-secondary">Únete al Club</a>
+        </div>
+
+        <!-- Stats Counters -->
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-number counter" data-target="{{ stats.total_productos }}">0</div>
+                <div class="stat-label">Productos</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number counter" data-target="{{ stats.total_clientes }}">0</div>
+                <div class="stat-label">Atletas</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number counter" data-target="{{ stats.total_marcas }}">0</div>
+                <div class="stat-label">Marcas</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number counter" data-target="{{ stats.total_sucursales }}">0</div>
+                <div class="stat-label">Sucursales</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Hero Image -->
+<div class="section" style="padding-top: 0;">
+    <div class="hero-image">
+        <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1600&q=80" 
+             alt="Sport Zone — Atletas en acción">
+    </div>
+</div>
+
+<!-- ========== PROPUESTA DE VALOR ========== -->
+<section class="section animate-on-scroll">
+    <div class="section-header">
+        <div class="section-label">¿Por qué elegirnos?</div>
+        <h2 class="section-title">Nuestra Propuesta de Valor</h2>
+        <p class="section-subtitle">La intersección perfecta entre innovación deportiva y la estética tech más vanguardista.</p>
+    </div>
+
+    <div class="value-grid">
+        <div class="value-card animate-on-scroll">
+            <div class="value-icon">⚡</div>
+            <h3>Alto Rendimiento</h3>
+            <p>Productos seleccionados con tecnología de última generación para maximizar tu desempeño deportivo.</p>
+        </div>
+        <div class="value-card animate-on-scroll">
+            <div class="value-icon">🏆</div>
+            <h3>Marcas Premium</h3>
+            <p>Trabajamos con las marcas más reconocidas del mundo deportivo: Nike, Adidas, Puma y más.</p>
+        </div>
+        <div class="value-card animate-on-scroll">
+            <div class="value-icon">🎯</div>
+            <h3>Asesoría Experta</h3>
+            <p>Nuestro equipo de especialistas te guía para encontrar el equipamiento perfecto para ti.</p>
+        </div>
+        <div class="value-card animate-on-scroll">
+            <div class="value-icon">💎</div>
+            <h3>Club Exclusivo</h3>
+            <p>Únete a nuestro programa de fidelización y accede a descuentos, preventas y beneficios únicos.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ========== MARCAS DESTACADAS ========== -->
+{% if marcas and marcas|length > 0 %}
+<section class="section animate-on-scroll">
+    <div class="section-header">
+        <div class="section-label">Nuestro catálogo</div>
+        <h2 class="section-title">Marcas Destacadas</h2>
+        <p class="section-subtitle">Las mejores marcas del deporte mundial, en un solo lugar.</p>
+    </div>
+
+    <div class="brands-grid">
+        {% for marca in marcas %}
+        <div class="brand-item animate-on-scroll">
+            <div class="brand-name">{{ marca.marca }}</div>
+            <div class="brand-count">{{ marca.total }} producto{{ 's' if marca.total != 1 else '' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="text-align: center; margin-top: 3rem;">
+        <a href="{{ url_for('public.productos') }}" class="btn-primary">Ver Todo el Catálogo →</a>
+    </div>
+</section>
+{% endif %}
+
+<!-- ========== CTA FINAL ========== -->
+<section class="section animate-on-scroll" style="text-align: center;">
+    <div class="section-header">
+        <div class="section-label">¿Listo para empezar?</div>
+        <h2 class="section-title">Lleva tu Juego al Siguiente Nivel</h2>
+        <p class="section-subtitle">Visita nuestras sucursales o explora nuestro catálogo online.</p>
+    </div>
+    <div class="hero-actions" style="opacity: 1;">
+        <a href="{{ url_for('public.sedes') }}" class="btn-primary">Encontrar Sucursal</a>
+        <a href="{{ url_for('public.mensajes') }}" class="btn-secondary">Contáctanos</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "public/layout.html" %}
+
+{% block title %}Sport Zone | Catálogo de Productos{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="section-header">
+        <div class="section-label">Catálogo</div>
+        <h1 class="section-title">Productos de Alto Rendimiento</h1>
+        <p class="section-subtitle">Novedades y equipamiento premium ordenados por fecha de ingreso. Pasa el cursor
+            sobre una tarjeta para ver los detalles.</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        {% set seen_brands = [] %}
+        {% for p in productos %}
+        {% if p.marca and p.marca not in seen_brands %}
+        {% if seen_brands.append(p.marca) %}{% endif %}
+        <button class="filter-btn" data-filter="{{ p.marca }}">{{ p.marca }}</button>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Product Grid -->
+    <div class="products-grid">
+        {% for p in productos %}
+        <div class="flip-container animate-on-scroll" data-brand="{{ p.marca }}"
+            data-category="{{ p.nombrecategoria or '' }}">
+            <div class="flip-card">
+                <!-- Cara Frontal -->
+                <div class="flip-front">
+                    {% if p.stockactual is not none and p.stockactual < 5 %} <div class="badge-alert">¡Últimas Unidades!
+                </div>
+                {% endif %}
+
+                <!-- Imágenes por marca -->
+                {% if p.marca and 'Nike' in p.marca %}
+                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80"
+                    alt="{{ p.nombreproducto }}">
+                {% elif p.marca and 'Adidas' in p.marca %}
+                <img src="https://images.unsplash.com/photo-1518002171953-a080ee817e1f?w=600&q=80"
+                    alt="{{ p.nombreproducto }}">
+                {% elif p.marca and 'Puma' in p.marca %}
+                <img src="https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=600&q=80"
+                    alt="{{ p.nombreproducto }}">
+                {% elif p.marca and 'Under Armour' in p.marca %}
+                <img src="https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&q=80"
+                    alt="{{ p.nombreproducto }}">
+                {% elif p.marca and 'Reebok' in p.marca %}
+                <img src="https://images.unsplash.com/photo-1539185441755-769473a23570?w=600&q=80"
+                    alt="{{ p.nombreproducto }}">
+                {% elif p.marca and 'New Balance' in p.marca %}
+                <img src="https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=600&q=80"
+                    alt="{{ p.nombreproducto }}">
+                {% else %}
+                <img src="https://images.unsplash.com/photo-1556906781-9a412961c28c?w=600&q=80"
+                    alt="{{ p.nombreproducto }}">
+                {% endif %}
+
+                <div class="flip-info">
+                    <div class="product-name">{{ p.nombreproducto }}</div>
+                    <div class="product-brand">{{ p.marca }}</div>
+                    <div class="product-price">${{ "%.2f"|format(p.precio) }}</div>
+                </div>
+            </div>
+
+            <!-- Cara Trasera -->
+            <div class="flip-back">
+                <h3>Detalles del Producto</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Material</span>
+                    <span class="detail-value">{{ p.material or 'N/A' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Talla</span>
+                    <span class="detail-value">{{ p.talla or 'N/A' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Temporada</span>
+                    <span class="detail-value">{{ p.temporada or 'N/A' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Categoría</span>
+                    <span class="detail-value">{{ p.nombrecategoria or 'General' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Stock</span>
+                    <span
+                        class="detail-value {% if p.stockactual is not none and p.stockactual < 5 %}stock-low{% endif %}">
+                        {{ p.stockactual if p.stockactual is not none else 'N/A' }} uds.
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Estado</span>
+                    <span class="detail-value">{{ p.estado or 'Disponible' }}</span>
+                </div>
+
+                <a href="#" class="btn-primary" style="margin-top: 1.2rem; width: 100%; font-size: 0.8rem;">
+                    Añadir al Carrito
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+
+    {% if not productos %}
+    <div style="text-align: center; padding: 4rem 2rem; color: var(--text-muted);">
+        <h2>No hay productos disponibles</h2>
+        <p>Vuelve pronto para ver nuestras novedades.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

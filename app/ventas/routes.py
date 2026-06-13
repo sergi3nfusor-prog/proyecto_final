@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import text
@@ -17,13 +17,20 @@ ventas_bp = Blueprint("ventas", __name__)
 
 @ventas_bp.route("/registrar", methods=["GET", "POST"])
 @login_required
-@role_required("vendedor", "admin")
+@role_required("empleado", "gerente", "admin")
 def registrar():
     form = VentaForm()
 
     if form.validate_on_submit():
         try:
             p_descuento = float(form.descuento.data or 0)
+            precio_unitario = float(
+                db.session.execute(
+                    text("SELECT fn_precio_producto(:id)"),
+                    {"id": form.id_producto.data}
+                ).scalar() or 0
+            )
+
             db.session.execute(
                 text("""
                     CALL sp_registrar_venta_integral(
@@ -37,18 +44,12 @@ def registrar():
                     "id_empleado":     _get_empleado_id(),
                     "id_producto":     form.id_producto.data,
                     "cantidad":        form.cantidad.data,
-                    "precio_unitario": float(
-                        db.session.execute(
-                            text("SELECT fn_precio_producto(:id)"),
-                            {"id": form.id_producto.data}
-                        ).scalar()
-                    ),
+                    "precio_unitario": precio_unitario,
                     "descuento_venta": p_descuento,
                     "razon_social":    form.razon_social.data or "S/N",
                     "nit":             form.nit.data or "0",
                 }
             )
-            db.session.commit()
             log_access(
                 "venta_registrada",
                 f"Cliente={form.id_cliente.data} Producto={form.id_producto.data} "
@@ -69,10 +70,7 @@ def _get_empleado_id():
     """Obtiene el IDEmpleado del usuario actual (si tiene empleado asociado)."""
     if current_user.empleado:
         return current_user.empleado.IDEmpleado
-    # Fallback: buscar el primer empleado ligado al usuario
-    from app.models import Empleado
-    emp = Empleado.query.filter_by(IDUsuarioEmpleado=current_user.IDUsuarioEmpleado).first()
-    return emp.IDEmpleado if emp else 1
+    raise ValueError("El usuario actual no tiene un empleado asociado.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -81,7 +79,7 @@ def _get_empleado_id():
 
 @ventas_bp.route("/historial")
 @login_required
-@role_required("vendedor", "admin")
+@role_required("empleado", "gerente", "admin")
 def historial():
     return render_template("ventas/historial_ventas.html")
 
@@ -92,6 +90,7 @@ def historial():
 
 @ventas_bp.route("/api/historial")
 @login_required
+@role_required("empleado", "gerente", "admin")
 def api_historial():
     fecha_inicio = request.args.get("fecha_inicio", "")
     fecha_fin    = request.args.get("fecha_fin", "")
@@ -137,6 +136,7 @@ def api_historial():
 
 @ventas_bp.route("/api/del_dia")
 @login_required
+@role_required("empleado", "gerente", "admin")
 def api_del_dia():
     fecha = request.args.get("fecha", date.today().isoformat())
     try:
@@ -155,12 +155,15 @@ def api_del_dia():
 
 @ventas_bp.route("/api/cliente/<int:id_cliente>")
 @login_required
+@role_required("empleado", "gerente", "admin")
 def api_cliente(id_cliente):
     try:
         nombre = db.session.execute(
             text("SELECT fn_nombre_cliente(:id)"),
             {"id": id_cliente}
         ).scalar()
+        if not nombre:
+            return jsonify({"error": "Cliente no encontrado"}), 404
         membresia = db.session.execute(
             text("SELECT fn_tiene_membresia_activa(:id)"),
             {"id": id_cliente}
@@ -175,7 +178,7 @@ def api_cliente(id_cliente):
             "nivel":     nivel,
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"error": str(e)}), 500
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -184,6 +187,7 @@ def api_cliente(id_cliente):
 
 @ventas_bp.route("/api/producto/<int:id_producto>")
 @login_required
+@role_required("empleado", "gerente", "admin")
 def api_producto(id_producto):
     try:
         precio = db.session.execute(

@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from flask_login import UserMixin
 from . import db
 
@@ -16,7 +15,7 @@ class UsuarioEmpleado(UserMixin, db.Model):
     # Guardamos SIEMPRE el hash — la columna en BD es VARCHAR(255) tras el ALTER
     contraseniaUsuario = db.Column('contraseniausuario', db.String(255), nullable=False)
     # Columna nueva agregada por migración
-    rol = db.Column('rol', db.String(20), nullable=False, default="vendedor")
+    rol = db.Column('rol', db.String(20), nullable=False, default="usuario")
 
     # Relación con empleado (backref permite user.empleado)
     empleado = db.relationship("Empleado", backref="usuario", uselist=False, lazy="select")
@@ -230,7 +229,170 @@ class BitacoraAcceso(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
     usuario_id = db.Column('usuario_id', db.Integer, db.ForeignKey('usuarioempleado.idusuarioempleado'), nullable=True)
-    fecha_hora = db.Column('fecha_hora', db.DateTime, default=lambda: datetime.now(timezone.utc))
+    fecha_hora = db.Column('fecha_hora', db.DateTime(timezone=True), server_default=db.func.now())
     ip = db.Column('ip', db.String(64))
     accion = db.Column('accion', db.String(80))
     detalle = db.Column('detalle', db.String(255))
+
+
+# ─────────────────────────────────────────────
+# TABLAS ADICIONALES
+# ─────────────────────────────────────────────
+
+class DireccionCliente(db.Model):
+    __tablename__ = "direccioncliente"
+    IDDireccionCliente = db.Column('iddireccioncliente', db.Integer, primary_key=True)
+    pais = db.Column('pais', db.String(45))
+    ciudad = db.Column('ciudad', db.String(45))
+    calle = db.Column('calle', db.String(45))
+    numeroProvincia = db.Column('numeroprovincia', db.String(45))
+    IDCliente = db.Column('idcliente', db.Integer, db.ForeignKey('cliente.idcliente'))
+
+class TelefonoCliente(db.Model):
+    __tablename__ = "telefonocliente"
+    IDTelefonoCliente = db.Column('idtelefonocliente', db.Integer, primary_key=True)
+    numeroTelefono = db.Column('numerotelefono', db.String(45))
+    IDCliente = db.Column('idcliente', db.Integer, db.ForeignKey('cliente.idcliente'))
+
+class ClienteRegistrado(db.Model):
+    __tablename__ = "clienteregistrado"
+    IDClienteRegistrado = db.Column('idclienteregistrado', db.Integer, primary_key=True)
+    fechaRegistro = db.Column('fecharegistro', db.Date)
+    IDCliente = db.Column('idcliente', db.Integer, db.ForeignKey('cliente.idcliente'))
+
+class HistorialMembresia(db.Model):
+    __tablename__ = "historialmembresia"
+    IDHistorialMembresia = db.Column('idhistorialmembresia', db.Integer, primary_key=True)
+    fechaInicio = db.Column('fechainicio', db.Date)
+    fechaExpiracion = db.Column('fechaexpiracion', db.Date)
+    IDClienteRegistrado = db.Column('idclienteregistrado', db.Integer, db.ForeignKey('clienteregistrado.idclienteregistrado'))
+
+class EstadoMembresia(db.Model):
+    __tablename__ = "estadomembresia"
+    IDEstadoMembresia = db.Column('idestadomembresia', db.Integer, primary_key=True)
+    estado = db.Column('estado', db.String(20))
+    IDHistorialMembresia = db.Column('idhistorialmembresia', db.Integer, db.ForeignKey('historialmembresia.idhistorialmembresia'))
+
+class ClienteFrecuente(db.Model):
+    __tablename__ = "clientefrecuente"
+    IDClienteFrecuente = db.Column('idclientefrecuente', db.Integer, primary_key=True)
+    monto = db.Column('monto', db.Numeric(18, 2))
+    IDCliente = db.Column('idcliente', db.Integer, db.ForeignKey('cliente.idcliente'))
+
+class HistorialCompras(db.Model):
+    __tablename__ = "historialcompras"
+    IDHistorialCompras = db.Column('idhistorialcompras', db.Integer, primary_key=True)
+    fechaCompra = db.Column('fechacompra', db.Date)
+    monto = db.Column('monto', db.Numeric(18, 2))
+    IDClienteFrecuente = db.Column('idclientefrecuente', db.Integer, db.ForeignKey('clientefrecuente.idclientefrecuente'))
+
+class EmailProveedor(db.Model):
+    __tablename__ = "emailproveedor"
+    IDEmailProveedor = db.Column('idemailproveedor', db.Integer, primary_key=True)
+    correo = db.Column('correo', db.String(45))
+    IDProveedor = db.Column('idproveedor', db.Integer, db.ForeignKey('proveedor.idproveedor'))
+
+class TelefonoProveedor(db.Model):
+    __tablename__ = "telefonoproveedor"
+    IDTelefonoProveedor = db.Column('idtelefonoproveedor', db.Integer, primary_key=True)
+    numeroTelefono = db.Column('numerotelefono', db.String(45))
+    IDProveedor = db.Column('idproveedor', db.Integer, db.ForeignKey('proveedor.idproveedor'))
+
+class DireccionProveedor(db.Model):
+    __tablename__ = "direccionproveedor"
+    IDDireccionProveedor = db.Column('iddireccionproveedor', db.Integer, primary_key=True)
+    pais = db.Column('pais', db.String(45))
+    ciudad = db.Column('ciudad', db.String(45))
+    calle = db.Column('calle', db.String(45))
+    numeroProvincia = db.Column('numeroprovincia', db.String(45))
+    IDProveedor = db.Column('idproveedor', db.Integer, db.ForeignKey('proveedor.idproveedor'))
+
+class DetalleFactura(db.Model):
+    __tablename__ = "detallefactura"
+    IDDetalleFactura = db.Column('iddetallefactura', db.Integer, primary_key=True)
+    conjunto = db.Column('conjunto', db.String(45))
+    montoTotal = db.Column('montototal', db.Numeric(18, 2))
+    fechaEmision = db.Column('fechaemision', db.Date)
+    cantidad = db.Column('cantidad', db.Integer)
+    descripcionProducto = db.Column('descripcionproducto', db.String(45))
+    IDFactura = db.Column('idfactura', db.Integer, db.ForeignKey('factura.idfactura'))
+
+class Promocion(db.Model):
+    __tablename__ = "promocion"
+    IDPromocion = db.Column('idpromocion', db.Integer, primary_key=True)
+    tipo = db.Column('tipo', db.String(45))
+    valor = db.Column('valor', db.String(45))
+    fechaInicio = db.Column('fechainicio', db.Date)
+    fechaFin = db.Column('fechafin', db.Date)
+    nombrePromocion = db.Column('nombrepromocion', db.String(45))
+    IDVenta = db.Column('idventa', db.Integer, db.ForeignKey('venta.idventa'))
+
+class Turno(db.Model):
+    __tablename__ = "turno"
+    IDTurno = db.Column('idturno', db.Integer, primary_key=True)
+    nombreTurno = db.Column('nombreturno', db.String(45))
+    horaIngreso = db.Column('horaingreso', db.Time)
+    horaSalida = db.Column('horasalida', db.Time)
+
+class EmpleadoTurno(db.Model):
+    __tablename__ = "empleadoturno"
+    IDEmpleadoTurno = db.Column('idempleadoturno', db.Integer, primary_key=True)
+    IDEmpleado = db.Column('idempleado', db.Integer, db.ForeignKey('empleado.idempleado'))
+    IDTurno = db.Column('idturno', db.Integer, db.ForeignKey('turno.idturno'))
+
+class EstadoEmpleado(db.Model):
+    __tablename__ = "estadoempleado"
+    IDEstadoEmpleado = db.Column('idestadoempleado', db.Integer, primary_key=True)
+    nombreEstado = db.Column('nombreestado', db.String(45))
+    IDEmpleado = db.Column('idempleado', db.Integer, db.ForeignKey('empleado.idempleado'))
+
+class Contrato(db.Model):
+    __tablename__ = "contrato"
+    IDContrato = db.Column('idcontrato', db.Integer, primary_key=True)
+    fechaInicioContrato = db.Column('fechainiciocontrato', db.Date)
+    fechaFinContrato = db.Column('fechafincontrato', db.Date)
+    IDEmpleado = db.Column('idempleado', db.Integer, db.ForeignKey('empleado.idempleado'))
+
+class Qr(db.Model):
+    __tablename__ = "qr"
+    IDQr = db.Column('idqr', db.Integer, primary_key=True)
+    nombreBanco = db.Column('nombrebanco', db.String(45))
+    comprobante = db.Column('comprobante', db.String(45))
+    IDPago = db.Column('idpago', db.Integer, db.ForeignKey('pago.idpago'))
+
+class Efectivo(db.Model):
+    __tablename__ = "efectivo"
+    IDEfectivo = db.Column('idefectivo', db.Integer, primary_key=True)
+    tipoCambio = db.Column('tipocambio', db.String(45))
+    IDPago = db.Column('idpago', db.Integer, db.ForeignKey('pago.idpago'))
+
+class Tarjeta(db.Model):
+    __tablename__ = "tarjeta"
+    IDTarjeta = db.Column('idtarjeta', db.Integer, primary_key=True)
+    numeroTarjeta = db.Column('numerotarjeta', db.String(45))
+    tipoTarjeta = db.Column('tipotarjeta', db.String(45))
+    IDPago = db.Column('idpago', db.Integer, db.ForeignKey('pago.idpago'))
+
+class TelefonoEmpleado(db.Model):
+    __tablename__ = "telefonoempleado"
+    IDTelefonoEmpleado = db.Column('idtelefonoempleado', db.Integer, primary_key=True)
+    numeroTelefono = db.Column('numerotelefono', db.String(45))
+    IDEmpleado = db.Column('idempleado', db.Integer, db.ForeignKey('empleado.idempleado'))
+
+class MensajesContactoAlternativo(db.Model):
+    __tablename__ = "mensajes_contacto"
+    IDMensaje = db.Column('idmensaje', db.Integer, primary_key=True)
+    nombre = db.Column('nombre', db.String(100), nullable=False)
+    correo = db.Column('correo', db.String(100), nullable=False)
+    asunto = db.Column('asunto', db.String(150))
+    mensaje = db.Column('mensaje', db.Text, nullable=False)
+    fecha_envio = db.Column('fecha_envio', db.DateTime(timezone=True), server_default=db.func.now())
+
+class MensajeContacto(db.Model):
+    __tablename__ = "mensaje_contacto"
+    id = db.Column('id', db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column('nombre', db.String(100), nullable=False)
+    email = db.Column('email', db.String(100), nullable=False)
+    asunto = db.Column('asunto', db.String(150))
+    mensaje = db.Column('mensaje', db.Text, nullable=False)
+    fecha_envio = db.Column('fecha_envio', db.DateTime(timezone=True), server_default=db.func.now())

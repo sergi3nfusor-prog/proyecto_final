@@ -32,9 +32,10 @@ const charts = {};
 // ── Helper: recoger filtros activos ─────────────────────────────
 function getFilterParams() {
   const anio     = document.getElementById("filtro-anio")?.value     || "";
+  const mes      = document.getElementById("filtro-mes")?.value      || "";
   const ciudad   = document.getElementById("filtro-ciudad")?.value   || "";
   const sucursal = document.getElementById("filtro-sucursal")?.value || "";
-  return new URLSearchParams({ anio, ciudad, sucursal });
+  return new URLSearchParams({ anio, mes, ciudad, sucursal });
 }
 
 // ── Helper: fetch con manejo de errores ─────────────────────────
@@ -68,6 +69,9 @@ async function cargarFiltros() {
       data.anios.forEach(a => {
         selAnio.innerHTML += `<option value="${a}">${a}</option>`;
       });
+      if (data.anios.length > 0) {
+        selAnio.value = data.anios[0];
+      }
     }
 
     if (selCiudad) {
@@ -381,7 +385,330 @@ async function cargarTopProductos(params = "") {
 }
 
 // ────────────────────────────────────────────────────────────────
-// 7. BOTÓN "APLICAR FILTROS"
+// 7. NUEVOS CHARTS: VENTAS POR MARCA + CLIENTES NUEVOS POR MES
+// ────────────────────────────────────────────────────────────────
+async function cargarVentasMarca(params = "") {
+  const canvas = document.getElementById("chart-ventas-marca");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/ventas_marca?${params}`);
+    destroyChart("ventas-marca");
+    charts["ventas-marca"] = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels:   data.labels,
+        datasets: [{
+          label:           "Ingresos (Bs)",
+          data:            data.data,
+          backgroundColor: PALETTE.slice(0, data.labels.length),
+          borderRadius:    6,
+          borderWidth:     0,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS,
+        responsive:          true,
+        maintainAspectRatio: false,
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          legend: { display: false },
+        },
+        scales: {
+          x: { ticks: { color: "#888", font: { family: "Inter", size: 11 } }, grid: { display: false } },
+          y: { ticks: { color: "#888", callback: v => "Bs " + v.toLocaleString() }, grid: { color: "rgba(255,255,255,0.04)" } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarVentasMarca:", e); }
+}
+
+async function cargarClientesNuevosMes(params = "") {
+  const canvas = document.getElementById("chart-clientes-nuevos");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/clientes_nuevos_mes?${params}`);
+    destroyChart("clientes-nuevos");
+    charts["clientes-nuevos"] = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels:   data.labels,
+        datasets: [{
+          label:           "Clientes Nuevos",
+          data:            data.data,
+          borderColor:     PALETTE[1],
+          backgroundColor: "rgba(231,76,60,0.10)",
+          borderWidth:     2.5,
+          pointBackgroundColor: PALETTE[1],
+          pointRadius:     5,
+          pointHoverRadius: 8,
+          fill:            true,
+          tension:         0.4,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS,
+        responsive:          true,
+        maintainAspectRatio: false,
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          legend: { display: false },
+        },
+        scales: {
+          x: { ticks: { color: "#888", font: { family: "Inter", size: 11 } }, grid: { color: "rgba(255,255,255,0.04)" } },
+          y: { ticks: { color: "#888" }, grid: { color: "rgba(255,255,255,0.04)" } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarClientesNuevosMes:", e); }
+}
+
+async function cargarComprasGenero(params = "") {
+  const canvas = document.getElementById("chart-compras-genero");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/compras_genero?${params}`);
+    destroyChart("compras-genero");
+    charts["compras-genero"] = new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: data.labels,
+        datasets: [{
+          data:             data.compras,
+          backgroundColor: PALETTE.slice(0, data.labels.length),
+          borderColor:     "rgba(255,255,255,0.06)",
+          borderWidth:     2,
+          hoverOffset:     8,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS,
+        responsive: true, maintainAspectRatio: false, cutout: "60%",
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          legend: { position: "bottom", labels: { color: "#888", font: { family: "Inter", size: 11 }, padding: 16 } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarComprasGenero:", e); }
+}
+
+async function cargarActividadClientesMes(params = "") {
+  const canvas = document.getElementById("chart-actividad-clientes");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/actividad_clientes_mes?${params}`);
+    destroyChart("actividad-clientes");
+    charts["actividad-clientes"] = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: data.labels,
+        datasets: [
+          {
+            label: "Clientes Activos",
+            data: data.clientes_activos,
+            backgroundColor: PALETTE[0],
+            borderRadius: 4, borderWidth: 0,
+          },
+          {
+            label: "Total Ventas",
+            data: data.total_ventas,
+            backgroundColor: PALETTE[3],
+            borderRadius: 4, borderWidth: 0,
+          }
+        ]
+      },
+      options: {
+        ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+        plugins: { ...CHART_DEFAULTS.plugins, legend: { position: "top", labels: { color: "#888", font: { family: "Inter", size: 11 } } } },
+        scales: {
+          x: { ticks: { color: "#888", font: { family: "Inter", size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: "#888" }, grid: { color: "rgba(255,255,255,0.04)" } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarActividadClientesMes:", e); }
+}
+
+async function cargarIngresosCategoria(params = "") {
+  const canvas = document.getElementById("chart-ingresos-categoria");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/ingresos_categoria?${params}`);
+    destroyChart("ingresos-categoria");
+    charts["ingresos-categoria"] = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: "Ingresos (Bs)",
+          data: data.ingresos,
+          backgroundColor: PALETTE.slice(0, data.labels.length),
+          borderRadius: 6, borderWidth: 0,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+        indexAxis: "y",
+        plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } },
+        scales: {
+          x: { ticks: { color: "#888", callback: v => "Bs " + v.toLocaleString() }, grid: { color: "rgba(255,255,255,0.04)" } },
+          y: { ticks: { color: "#e8e8e8", font: { family: "Inter", size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarIngresosCategoria:", e); }
+}
+
+async function cargarVentasTemporada(params = "") {
+  const canvas = document.getElementById("chart-ventas-temporada");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/ventas_temporada?${params}`);
+    destroyChart("ventas-temporada");
+    charts["ventas-temporada"] = new Chart(canvas, {
+      type: "pie",
+      data: {
+        labels: data.labels,
+        datasets: [{
+          data: data.ingresos,
+          backgroundColor: PALETTE.slice(0, data.labels.length),
+          borderColor: "rgba(255,255,255,0.06)",
+          borderWidth: 2, hoverOffset: 8,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          legend: { position: "bottom", labels: { color: "#888", font: { family: "Inter", size: 11 }, padding: 14 } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarVentasTemporada:", e); }
+}
+
+async function cargarIngresosFidelidad(params = "") {
+  const canvas = document.getElementById("chart-ingresos-fidelidad");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/ingresos_fidelidad?${params}`);
+    destroyChart("ingresos-fidelidad");
+    charts["ingresos-fidelidad"] = new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: data.labels,
+        datasets: [{
+          data: data.ingresos,
+          backgroundColor: PALETTE.slice(0, data.labels.length),
+          borderColor: "rgba(255,255,255,0.06)",
+          borderWidth: 2, hoverOffset: 8,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false, cutout: "60%",
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          legend: { position: "bottom", labels: { color: "#888", font: { family: "Inter", size: 11 }, padding: 16 } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarIngresosFidelidad:", e); }
+}
+
+async function cargarTicketPromedioMes(params = "") {
+  const canvas = document.getElementById("chart-ticket-promedio-mes");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/ticket_promedio_mes?${params}`);
+    destroyChart("ticket-promedio-mes");
+    charts["ticket-promedio-mes"] = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: "Ticket Promedio",
+          data: data.data,
+          borderColor: PALETTE[2],
+          backgroundColor: "rgba(146, 43, 33, 0.10)",
+          borderWidth: 2.5,
+          pointBackgroundColor: PALETTE[2],
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          fill: true,
+          tension: 0.4,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+        plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } },
+        scales: {
+          x: { ticks: { color: "#888", font: { family: "Inter", size: 11 } }, grid: { color: "rgba(255,255,255,0.04)" } },
+          y: { ticks: { color: "#888", callback: v => "Bs " + v.toLocaleString() }, grid: { color: "rgba(255,255,255,0.04)" } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarTicketPromedioMes:", e); }
+}
+
+async function cargarIngresosMaterial(params = "") {
+  const canvas = document.getElementById("chart-ingresos-material");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/ingresos_material?${params}`);
+    destroyChart("ingresos-material");
+    charts["ingresos-material"] = new Chart(canvas, {
+      type: "pie",
+      data: {
+        labels: data.labels,
+        datasets: [{
+          data: data.ingresos,
+          backgroundColor: PALETTE.slice(0, data.labels.length),
+          borderColor: "rgba(255,255,255,0.06)",
+          borderWidth: 2, hoverOffset: 8,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          legend: { position: "right", labels: { color: "#888", font: { family: "Inter", size: 10 }, padding: 12 } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarIngresosMaterial:", e); }
+}
+
+async function cargarVentasTalla(params = "") {
+  const canvas = document.getElementById("chart-ventas-talla");
+  if (!canvas) return;
+  try {
+    const data = await fetchJSON(`/dashboard/api/ventas_talla?${params}`);
+    destroyChart("ventas-talla");
+    charts["ventas-talla"] = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: "Unidades Vendidas",
+          data: data.unidades,
+          backgroundColor: PALETTE.slice(0, data.labels.length),
+          borderRadius: 4, borderWidth: 0,
+        }]
+      },
+      options: {
+        ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+        plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } },
+        scales: {
+          x: { ticks: { color: "#888", font: { family: "Inter", size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: "#888" }, grid: { color: "rgba(255,255,255,0.04)" } }
+        }
+      }
+    });
+  } catch (e) { console.error("Error cargarVentasTalla:", e); }
+}
+
+// ────────────────────────────────────────────────────────────────
+// 8. BOTÓN "APLICAR FILTROS"
 // ────────────────────────────────────────────────────────────────
 function inicializarFiltros() {
   const btn = document.getElementById("btn-aplicar-filtros");
@@ -398,7 +725,68 @@ function inicializarFiltros() {
       cargarSucursales(params),
       cargarStockSalud(params),
       cargarTopProductos(params),
+      cargarVentasMarca(params),
+      cargarClientesNuevosMes(params),
       window.recargarTablaOlap ? window.recargarTablaOlap(params) : Promise.resolve(),
+    ]).finally(() => {
+      btn.innerHTML = '<i class="fas fa-filter"></i> Aplicar Filtros';
+      btn.disabled = false;
+    });
+  });
+}
+
+async function inicializarFiltrosClientes() {
+  try {
+    const data = await fetchJSON("/dashboard/api/filtros");
+    const sel = document.getElementById("filtro-anio-clientes");
+    if (sel) {
+      sel.innerHTML = '<option value="">Todos los años</option>';
+      data.anios.forEach(a => { sel.innerHTML += `<option value="${a}">${a}</option>`; });
+      if (data.anios.length > 0) sel.value = data.anios[0];
+    }
+  } catch (e) { console.warn("Error cargando filtros clientes:", e); }
+
+  const btn = document.getElementById("btn-aplicar-filtros-clientes");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const anio = document.getElementById("filtro-anio-clientes")?.value || "";
+    const params = new URLSearchParams({ anio }).toString();
+    btn.innerHTML = '<span class="spinner"></span> Cargando…';
+    btn.disabled = true;
+    Promise.all([
+      cargarClientesSegmento(params),
+      cargarComprasGenero(params),
+      cargarActividadClientesMes(params),
+    ]).finally(() => {
+      btn.innerHTML = '<i class="fas fa-filter"></i> Aplicar Filtros';
+      btn.disabled = false;
+    });
+  });
+}
+
+async function inicializarFiltrosProductos() {
+  try {
+    const data = await fetchJSON("/dashboard/api/filtros");
+    const sel = document.getElementById("filtro-anio-productos");
+    if (sel) {
+      sel.innerHTML = '<option value="">Todos los años</option>';
+      data.anios.forEach(a => { sel.innerHTML += `<option value="${a}">${a}</option>`; });
+      if (data.anios.length > 0) sel.value = data.anios[0];
+    }
+  } catch (e) { console.warn("Error cargando filtros productos:", e); }
+
+  const btn = document.getElementById("btn-aplicar-filtros-productos");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const anio = document.getElementById("filtro-anio-productos")?.value || "";
+    const params = new URLSearchParams({ anio }).toString();
+    btn.innerHTML = '<span class="spinner"></span> Cargando…';
+    btn.disabled = true;
+    Promise.all([
+      cargarStockSalud(params),
+      cargarTopProductos(params),
+      cargarIngresosCategoria(params),
+      cargarVentasTemporada(params),
     ]).finally(() => {
       btn.innerHTML = '<i class="fas fa-filter"></i> Aplicar Filtros';
       btn.disabled = false;
@@ -412,14 +800,28 @@ function inicializarFiltros() {
 document.addEventListener("DOMContentLoaded", async () => {
   await cargarFiltros();
 
-  // Cargar todos los charts presentes en la página actual
+  // Ahora el selector ya tiene el año más reciente pre-seleccionado
   const params = getFilterParams().toString();
-  cargarVentasMes(params);
-  cargarClientesSegmento(params);
-  cargarSucursales(params);
-  cargarStockSalud(params);
-  cargarTopProductos(params);
-  if (window.recargarTablaOlap) window.recargarTablaOlap(params);
+  await Promise.all([
+    cargarVentasMes(params),
+    cargarClientesSegmento(params),
+    cargarSucursales(params),
+    cargarStockSalud(params),
+    cargarTopProductos(params),
+    cargarVentasMarca(params),
+    cargarClientesNuevosMes(params),
+    cargarComprasGenero(params),
+    cargarActividadClientesMes(params),
+    cargarIngresosCategoria(params),
+    cargarVentasTemporada(params),
+    cargarIngresosFidelidad(params),
+    cargarTicketPromedioMes(params),
+    cargarIngresosMaterial(params),
+    cargarVentasTalla(params),
+    window.recargarTablaOlap ? window.recargarTablaOlap(params) : Promise.resolve(),
+  ]);
 
   inicializarFiltros();
+  await inicializarFiltrosClientes();
+  await inicializarFiltrosProductos();
 });

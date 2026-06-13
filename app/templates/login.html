@@ -81,9 +81,12 @@
     </form>
 
     <div class="login-divider"></div>
+    <p class="text-center text-muted" style="font-size:0.8rem;margin-bottom:8px">
+      ¿No tiene cuenta? <a href="{{ url_for('auth.registro') }}" style="color:var(--accent-light);font-weight:700">Crear cuenta</a>
+    </p>
     <p class="text-center text-muted" style="font-size:0.75rem">
       <i class="fas fa-shield-alt"></i>
-      Acceso solo para personal autorizado
+      Acceso público para clientes y restringido para personal interno
     </p>
   </div>
 </div>

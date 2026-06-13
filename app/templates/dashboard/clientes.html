@@ -8,6 +8,21 @@
   <p class="page-subtitle">Segmentación y análisis de fidelización de clientes.</p>
 </div>
 
+<!-- Filtros -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label>Año</label>
+    <select id="filtro-anio-clientes" class="form-select" style="width:130px">
+      <option value="">Todos los años</option>
+    </select>
+  </div>
+  <div style="margin-top:20px">
+    <button id="btn-aplicar-filtros-clientes" class="btn btn-primary">
+      <i class="fas fa-filter"></i> Aplicar Filtros
+    </button>
+  </div>
+</div>
+
 <!-- KPI Cards -->
 <div class="kpi-grid">
   <div class="kpi-card">
@@ -80,20 +95,41 @@
     </div>
   </div>
 </div>
+<!-- Gráficos fila 2 -->
+<div class="chart-grid">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-venus-mars text-accent"></i> Compras por Género</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-compras-genero"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-chart-area text-accent"></i> Actividad de Clientes por Mes</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-actividad-clientes"></canvas>
+    </div>
+  </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script>
-// Actualizar KPIs tras cargar segmentos
 document.addEventListener('DOMContentLoaded', () => {
-  fetch('/dashboard/api/clientes_segmento')
+  const anio = document.getElementById('filtro-anio-clientes')?.value || '';
+  const params = new URLSearchParams({ anio }).toString();
+
+  fetch(`/dashboard/api/clientes_segmento?${params}`)
     .then(r => r.json())
     .then(d => {
       const seg = {};
-      (d.segmentos?.labels || []).forEach((l, i) => {
-        seg[l] = d.segmentos.data[i];
-      });
+      (d.segmentos?.labels || []).forEach((l, i) => { seg[l] = d.segmentos.data[i]; });
       const el = id => document.getElementById(id);
       if (el('kpi-platinos')) el('kpi-platinos').textContent = seg['Platino'] || 0;
       if (el('kpi-oros'))     el('kpi-oros').textContent     = seg['Oro']     || 0;

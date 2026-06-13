@@ -25,26 +25,26 @@
 <!-- Tabla de productos -->
 <div class="card">
   <div id="tabla-productos-wrapper">
-    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+    <div id="spinner-productos" style="text-align:center;padding:40px;color:var(--text-muted)">
       <span class="spinner"></span>
       <p style="margin-top:12px">Cargando productos…</p>
     </div>
+    <table id="tabla-productos" class="display w-100" style="width:100%;display:none">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Producto</th>
+          <th>Marca</th>
+          <th>Precio</th>
+          <th>Talla</th>
+          <th>Temporada</th>
+          <th>Stock</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
-  <table id="tabla-productos" class="display w-100" style="width:100%;display:none">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Producto</th>
-        <th>Marca</th>
-        <th>Precio</th>
-        <th>Talla</th>
-        <th>Temporada</th>
-        <th>Stock</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
 </div>
 {% endblock %}
 

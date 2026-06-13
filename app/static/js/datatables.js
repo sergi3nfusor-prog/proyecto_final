@@ -56,12 +56,20 @@ window.recargarTablaOlap = function(params = null) {
   if (!qs) {
     qs = new URLSearchParams({
       anio:     document.getElementById("filtro-anio")?.value     || "",
+      mes:      document.getElementById("filtro-mes")?.value      || "",
       ciudad:   document.getElementById("filtro-ciudad")?.value   || "",
       sucursal: document.getElementById("filtro-sucursal")?.value || "",
     }).toString();
   } else if (params instanceof URLSearchParams) {
     qs = params.toString();
   }
+
+  wrapper.innerHTML = `
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <span class="spinner"></span>
+      <p style="margin-top:12px">Cargando datos OLAP…</p>
+    </div>
+  `;
 
   return fetch(`/dashboard/api/tabla_olap?${qs}`)
     .then(r => r.json())
@@ -133,6 +141,11 @@ function initTablaHistorial() {
     fetch(`/ventas/api/historial?${params}`)
       .then(r => r.json())
       .then(({ data }) => {
+        const spinner = document.getElementById("spinner-historial");
+        const tabla   = document.getElementById("tabla-historial");
+        if (spinner) spinner.style.display = "none";
+        if (tabla)   tabla.style.display   = "";
+
         if (jQuery && jQuery.fn.DataTable) {
           // Destruir si ya existe
           if (jQuery.fn.DataTable.isDataTable("#tabla-historial")) {
@@ -167,7 +180,13 @@ function initTablaHistorial() {
           });
         }
       })
-      .catch(err => console.error("Error historial:", err));
+      .catch(err => {
+        console.error("Error historial:", err);
+        const spinner = document.getElementById("spinner-historial");
+        const tabla   = document.getElementById("tabla-historial");
+        if (spinner) spinner.innerHTML = `<p class="text-danger" style="padding:20px">Error cargando historial: ${err.message}</p>`;
+        if (tabla)   tabla.style.display = "none";
+      });
   }
 
   cargarHistorial();
@@ -193,6 +212,11 @@ function initTablaProductos() {
     fetch(`/inventario/api/productos?${params}`)
       .then(r => r.json())
       .then(({ data }) => {
+        const spinner = document.getElementById("spinner-productos");
+        const tabla   = document.getElementById("tabla-productos");
+        if (spinner) spinner.style.display = "none";
+        if (tabla)   tabla.style.display   = "";
+
         if (jQuery && jQuery.fn.DataTable) {
           if (jQuery.fn.DataTable.isDataTable("#tabla-productos")) {
             jQuery("#tabla-productos").DataTable().destroy();
@@ -236,7 +260,13 @@ function initTablaProductos() {
           });
         }
       })
-      .catch(err => console.error("Error productos:", err));
+      .catch(err => {
+        console.error("Error productos:", err);
+        const spinner = document.getElementById("spinner-productos");
+        const tabla   = document.getElementById("tabla-productos");
+        if (spinner) spinner.innerHTML = `<p class="text-danger" style="padding:20px">Error cargando productos: ${err.message}</p>`;
+        if (tabla)   tabla.style.display = "none";
+      });
   }
 
   cargarProductos();

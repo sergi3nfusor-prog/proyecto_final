@@ -4,7 +4,7 @@ from flask_login import login_required
 from sqlalchemy import text, extract, func
 
 from app import db
-from app.models import Venta, Sucursal, Cliente, ProgramaFidelizacion, Producto, Inventario, DetalleVenta
+from app.models import Venta, Sucursal, Cliente, ProgramaFidelizacion, Producto, Inventario, DetalleVenta, Categoria
 from app.auth.routes import role_required
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -17,6 +17,7 @@ dashboard_bp = Blueprint("dashboard", __name__)
 def _get_filters():
     return {
         "anio":     request.args.get("anio", ""),
+        "mes":      request.args.get("mes", ""),
         "ciudad":   request.args.get("ciudad", ""),
         "sucursal": request.args.get("sucursal", ""),
     }
@@ -28,21 +29,21 @@ def _get_filters():
 
 @dashboard_bp.route("/ejecutivo")
 @login_required
-@role_required("admin")
+@role_required("gerente", "admin")
 def ejecutivo():
     return render_template("dashboard/ejecutivo.html")
 
 
 @dashboard_bp.route("/clientes")
 @login_required
-@role_required("admin")
+@role_required("gerente", "admin")
 def clientes():
     return render_template("dashboard/clientes.html")
 
 
 @dashboard_bp.route("/productos")
 @login_required
-@role_required("admin")
+@role_required("gerente", "admin")
 def productos():
     return render_template("dashboard/productos.html")
 
@@ -53,6 +54,7 @@ def productos():
 
 @dashboard_bp.route("/api/filtros")
 @login_required
+@role_required("gerente", "admin")
 def api_filtros():
     sucursales = db.session.query(Sucursal.nombreSucursal, Sucursal.ciudad).all()
     ciudades   = db.session.query(Sucursal.ciudad).distinct().all()
@@ -80,9 +82,15 @@ MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
 
 @dashboard_bp.route("/api/ventas_mes")
 @login_required
+@role_required("gerente", "admin")
 def api_ventas_mes():
     filtros = _get_filters()
-    anio    = int(filtros["anio"]) if filtros["anio"] else date.today().year
+    anio_str = filtros["anio"]
+    mes_str  = filtros["mes"]
+    anio = int(anio_str) if anio_str and str(anio_str).isdigit() else date.today().year
+    mes  = int(mes_str) if mes_str and str(mes_str).isdigit() else None
+    if mes is not None and not (1 <= mes <= 12):
+        mes = None
 
     try:
         rows = db.session.execute(
@@ -98,16 +106,19 @@ def api_ventas_mes():
         total_general = db.session.execute(
             text("SELECT fn_total_general_ventas()")
         ).scalar()
-        total_mes      = sum(data)
-        transacciones  = db.session.query(func.count(Venta.IDVenta)).filter(
+        total_mes = data[mes - 1] if mes else sum(data)
+        q_trans = db.session.query(func.count(Venta.IDVenta)).filter(
             extract("year", Venta.fechaVenta) == anio
-        ).scalar() or 0
+        )
+        if mes:
+            q_trans = q_trans.filter(extract("month", Venta.fechaVenta) == mes)
+        transacciones = q_trans.scalar() or 0
         ticket_prom    = round(total_mes / transacciones, 2) if transacciones else 0
 
-        mes_actual = date.today().month
+        mes_para_descuentos = mes if mes else date.today().month
         total_descuentos = db.session.execute(
             text("SELECT fn_descuentos_mes(:mes, :anio)"),
-            {"mes": mes_actual, "anio": anio}
+            {"mes": mes_para_descuentos, "anio": anio}
         ).scalar()
 
         return jsonify({
@@ -130,6 +141,7 @@ def api_ventas_mes():
 
 @dashboard_bp.route("/api/clientes_segmento")
 @login_required
+@role_required("gerente", "admin")
 def api_clientes_segmento():
     try:
         # CTE: calcular totales por cliente, luego segmentar en la capa externa
@@ -195,6 +207,7 @@ def api_clientes_segmento():
 
 @dashboard_bp.route("/api/sucursales")
 @login_required
+@role_required("gerente", "admin")
 def api_sucursales():
     filtros = _get_filters()
     try:
@@ -209,12 +222,18 @@ def api_sucursales():
                     NULLIF(COUNT(DISTINCT es.idempleado), 0), 2) AS productividad_por_empleado
             FROM sucursal s
             JOIN empleadosucursal es ON s.idsucursal = es.idsucursal
-            JOIN venta v             ON es.idempleado = v.idempleado
-            WHERE (:ciudad = '' OR s.ciudad = :ciudad)
+            LEFT JOIN venta v        ON es.idempleado = v.idempleado
+            WHERE (:ciudad = '' OR s.ciudad  = :ciudad)
+              AND (:anio   = '' OR EXTRACT(YEAR  FROM v.fechaventa)::text = :anio)
+              AND (:mes    = '' OR EXTRACT(MONTH FROM v.fechaventa)::text = :mes)
             GROUP BY s.ciudad, s.nombresucursal
             ORDER BY recaudacion_total DESC
         """)
-        rows = db.session.execute(sql, {"ciudad": filtros["ciudad"]}).fetchall()
+        rows = db.session.execute(sql, {
+            "ciudad": filtros["ciudad"],
+            "anio":   filtros["anio"],
+            "mes":    filtros["mes"]
+        }).fetchall()
 
         return jsonify({
             "labels": [r.nombresucursal for r in rows],
@@ -233,6 +252,7 @@ def api_sucursales():
 
 @dashboard_bp.route("/api/stock_salud")
 @login_required
+@role_required("gerente", "admin")
 def api_stock_salud():
     try:
         rows = db.session.execute(text("""
@@ -263,6 +283,7 @@ def api_stock_salud():
 
 @dashboard_bp.route("/api/tabla_olap")
 @login_required
+@role_required("gerente", "admin")
 def api_tabla_olap():
     filtros = _get_filters()
     try:
@@ -274,11 +295,11 @@ def api_tabla_olap():
                 COALESCE(pf.nivel, 'No Miembro')       AS perfil_fidelidad,
                 COUNT(DISTINCT v.idventa)              AS total_transacciones,
                 SUM(dv.cantidad)                       AS volumen_articulos,
-                ROUND(SUM(v.montototal)::NUMERIC, 2)   AS ingresos_brutos,
-                ROUND(SUM(v.descuentoaplicado)::NUMERIC, 2) AS ahorro_clientes,
-                ROUND(SUM(v.montototal - v.descuentoaplicado)::NUMERIC, 2) AS ingresos_netos,
-                ROUND((SUM(v.descuentoaplicado) /
-                    NULLIF(SUM(v.montototal), 0)) * 100, 2) || '%%' AS impacto_promocional
+                ROUND(SUM(dv.subtotal)::NUMERIC, 2)   AS ingresos_brutos,
+                ROUND(SUM(dv.descuento)::NUMERIC, 2) AS ahorro_clientes,
+                ROUND(SUM(dv.subtotal - dv.descuento)::NUMERIC, 2) AS ingresos_netos,
+                ROUND((SUM(dv.descuento) /
+                    NULLIF(SUM(dv.subtotal), 0)) * 100, 2) || '%%' AS impacto_promocional
             FROM venta v
             JOIN detalleventa dv     ON v.idventa    = dv.idventa
             JOIN cliente c           ON v.idcliente  = c.idcliente
@@ -286,7 +307,8 @@ def api_tabla_olap():
             JOIN empleadosucursal es ON v.idempleado = es.idempleado
             JOIN sucursal s          ON es.idsucursal = s.idsucursal
             WHERE
-                (:anio    = '' OR EXTRACT(YEAR  FROM v.fechaventa)::TEXT = :anio)
+                (:anio    = '' OR EXTRACT(YEAR  FROM v.fechaventa)::INT::TEXT = :anio)
+                AND (:mes  = '' OR EXTRACT(MONTH FROM v.fechaventa)::INT::TEXT = :mes)
                 AND (:ciudad  = '' OR s.ciudad = :ciudad)
                 AND (:sucursal = '' OR s.nombresucursal = :sucursal)
             GROUP BY anio, mes, s.ciudad, perfil_fidelidad
@@ -295,6 +317,7 @@ def api_tabla_olap():
         """)
         rows = db.session.execute(sql, {
             "anio":     filtros["anio"],
+            "mes":      filtros["mes"],
             "ciudad":   filtros["ciudad"],
             "sucursal": filtros["sucursal"],
         }).fetchall()
@@ -323,6 +346,7 @@ def api_tabla_olap():
 
 @dashboard_bp.route("/api/productos_dashboard")
 @login_required
+@role_required("gerente", "admin")
 def api_productos_dashboard():
     try:
         # Unidades vendidas por producto (TOP 10)
@@ -361,5 +385,324 @@ def api_productos_dashboard():
             "productos_en_alerta":   int(en_alerta or 0),
         })
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Ventas por marca (bar chart)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dashboard_bp.route("/api/ventas_marca")
+@login_required
+@role_required("gerente", "admin")
+def api_ventas_marca():
+    filtros = _get_filters()
+    anio = int(filtros["anio"]) if filtros["anio"] else None
+    mes  = int(filtros["mes"])  if filtros["mes"]  else None
+    try:
+        q = db.session.query(
+            Producto.marca.label("marca"),
+            func.sum(DetalleVenta.subtotal).label("total")
+        ).join(DetalleVenta, DetalleVenta.IDProducto == Producto.IDProducto
+        ).join(Venta, Venta.IDVenta == DetalleVenta.IDVenta)
+        if anio:
+            q = q.filter(extract("year", Venta.fechaVenta) == anio)
+        if mes:
+            q = q.filter(extract("month", Venta.fechaVenta) == mes)
+        q = q.filter(Producto.marca.isnot(None)).group_by(Producto.marca).order_by(func.sum(DetalleVenta.subtotal).desc()).limit(8)
+        rows = q.all()
+        return jsonify({
+            "labels": [r.marca for r in rows],
+            "data":   [float(r.total or 0) for r in rows],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Evolución de clientes nuevos por mes (line chart)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dashboard_bp.route("/api/clientes_nuevos_mes")
+@login_required
+@role_required("gerente", "admin")
+def api_clientes_nuevos_mes():
+    filtros = _get_filters()
+    anio = int(filtros["anio"]) if filtros["anio"] else None
+    try:
+        subq = (
+            db.session.query(
+                Venta.IDCliente,
+                func.min(Venta.fechaVenta).label("primera_compra")
+            )
+            .group_by(Venta.IDCliente)
+            .subquery()
+        )
+        q = (
+            db.session.query(
+                extract("month", subq.c.primera_compra).label("mes"),
+                func.count(subq.c.IDCliente).label("nuevos")
+            )
+        )
+        if anio:
+            q = q.filter(extract("year", subq.c.primera_compra) == anio)
+        rows = (
+            q.group_by(extract("month", subq.c.primera_compra))
+            .order_by(extract("month", subq.c.primera_compra))
+            .all()
+        )
+        mes_map = {int(r.mes): int(r.nuevos) for r in rows}
+        return jsonify({
+            "labels": MESES,
+            "data":   [mes_map.get(i + 1, 0) for i in range(12)],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Compras por género de cliente (Dashboard Clientes — gráfico 3)
+# ─────────────────────────────────────────────────────────────────────────────
+@dashboard_bp.route("/api/compras_genero")
+@login_required
+@role_required("gerente", "admin")
+def api_compras_genero():
+    filtros = _get_filters()
+    try:
+        q = (
+            db.session.query(
+                Cliente.genero.label("genero"),
+                func.count(Venta.IDVenta).label("total_compras"),
+                func.sum(Venta.montoTotal).label("monto_total")
+            )
+            .join(Venta, Venta.IDCliente == Cliente.IDCliente)
+            .filter(Cliente.genero.isnot(None))
+        )
+        if filtros["anio"]:
+            q = q.filter(extract("year", Venta.fechaVenta) == int(filtros["anio"]))
+        rows = q.group_by(Cliente.genero).order_by(func.count(Venta.IDVenta).desc()).all()
+        return jsonify({
+            "labels": [r.genero for r in rows],
+            "compras": [int(r.total_compras) for r in rows],
+            "montos":  [float(r.monto_total or 0) for r in rows],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Actividad de clientes por mes — primeras compras (Dashboard Clientes — gráfico 4)
+# ─────────────────────────────────────────────────────────────────────────────
+@dashboard_bp.route("/api/actividad_clientes_mes")
+@login_required
+@role_required("gerente", "admin")
+def api_actividad_clientes_mes():
+    filtros = _get_filters()
+    anio = int(filtros["anio"]) if filtros["anio"] else None
+    try:
+        q = (
+            db.session.query(
+                extract("month", Venta.fechaVenta).label("mes"),
+                func.count(func.distinct(Venta.IDCliente)).label("clientes_activos"),
+                func.count(Venta.IDVenta).label("total_ventas")
+            )
+        )
+        if anio:
+            q = q.filter(extract("year", Venta.fechaVenta) == anio)
+            
+        rows = (
+            q.group_by(extract("month", Venta.fechaVenta))
+            .order_by(extract("month", Venta.fechaVenta))
+            .all()
+        )
+        mes_map_clientes = {int(r.mes): int(r.clientes_activos) for r in rows}
+        mes_map_ventas   = {int(r.mes): int(r.total_ventas) for r in rows}
+        return jsonify({
+            "labels":          MESES,
+            "clientes_activos": [mes_map_clientes.get(i + 1, 0) for i in range(12)],
+            "total_ventas":     [mes_map_ventas.get(i + 1, 0) for i in range(12)],
+            "anio":             anio,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Ingresos por categoría de producto (Dashboard Productos — gráfico 3)
+# ─────────────────────────────────────────────────────────────────────────────
+@dashboard_bp.route("/api/ingresos_categoria")
+@login_required
+@role_required("gerente", "admin")
+def api_ingresos_categoria():
+    try:
+        rows = (
+            db.session.query(
+                Categoria.nombreCategoria.label("categoria"),
+                func.sum(DetalleVenta.subtotal).label("ingresos"),
+                func.sum(DetalleVenta.cantidad).label("unidades")
+            )
+            .join(Producto, Producto.IDProducto == Categoria.IDProducto)
+            .join(DetalleVenta, DetalleVenta.IDProducto == Producto.IDProducto)
+            .filter(Categoria.nombreCategoria.isnot(None))
+            .group_by(Categoria.nombreCategoria)
+            .order_by(func.sum(DetalleVenta.subtotal).desc())
+            .limit(8)
+            .all()
+        )
+        return jsonify({
+            "labels":   [r.categoria for r in rows],
+            "ingresos": [float(r.ingresos or 0) for r in rows],
+            "unidades": [int(r.unidades or 0) for r in rows],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Ingresos por temporada de producto (Dashboard Productos — gráfico 4)
+# ─────────────────────────────────────────────────────────────────────────────
+@dashboard_bp.route("/api/ventas_temporada")
+@login_required
+@role_required("gerente", "admin")
+def api_ventas_temporada():
+    try:
+        rows = (
+            db.session.query(
+                Producto.temporada.label("temporada"),
+                func.sum(DetalleVenta.subtotal).label("ingresos"),
+                func.count(func.distinct(Venta.IDVenta)).label("transacciones")
+            )
+            .join(DetalleVenta, DetalleVenta.IDProducto == Producto.IDProducto)
+            .join(Venta, Venta.IDVenta == DetalleVenta.IDVenta)
+            .filter(Producto.temporada.isnot(None))
+            .group_by(Producto.temporada)
+            .order_by(func.sum(DetalleVenta.subtotal).desc())
+            .all()
+        )
+        return jsonify({
+            "labels":        [r.temporada for r in rows],
+            "ingresos":      [float(r.ingresos or 0) for r in rows],
+            "transacciones": [int(r.transacciones) for r in rows],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Ingresos por Nivel de Fidelidad (Dashboard Clientes — gráfico 5)
+# ─────────────────────────────────────────────────────────────────────────────
+@dashboard_bp.route("/api/ingresos_fidelidad")
+@login_required
+@role_required("gerente", "admin")
+def api_ingresos_fidelidad():
+    filtros = _get_filters()
+    try:
+        q = (
+            db.session.query(
+                func.coalesce(ProgramaFidelizacion.nivel, 'Sin Registro').label("nivel"),
+                func.sum(Venta.montoTotal).label("ingresos")
+            )
+            .select_from(Venta)
+            .join(Cliente, Cliente.IDCliente == Venta.IDCliente)
+            .outerjoin(ProgramaFidelizacion, ProgramaFidelizacion.IDCliente == Cliente.IDCliente)
+        )
+        if filtros["anio"]:
+            q = q.filter(extract("year", Venta.fechaVenta) == int(filtros["anio"]))
+        rows = q.group_by("nivel").order_by(func.sum(Venta.montoTotal).desc()).all()
+        return jsonify({
+            "labels": [r.nivel for r in rows],
+            "ingresos": [float(r.ingresos or 0) for r in rows],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Ticket Promedio por Mes (Dashboard Clientes — gráfico 6)
+# ─────────────────────────────────────────────────────────────────────────────
+@dashboard_bp.route("/api/ticket_promedio_mes")
+@login_required
+@role_required("gerente", "admin")
+def api_ticket_promedio_mes():
+    filtros = _get_filters()
+    anio = int(filtros["anio"]) if filtros["anio"] else None
+    try:
+        q = db.session.query(
+            extract("month", Venta.fechaVenta).label("mes"),
+            func.avg(Venta.montoTotal).label("ticket_promedio")
+        )
+        if anio:
+            q = q.filter(extract("year", Venta.fechaVenta) == anio)
+
+        rows = (
+            q.group_by(extract("month", Venta.fechaVenta))
+            .order_by(extract("month", Venta.fechaVenta))
+            .all()
+        )
+        mes_map = {int(r.mes): float(r.ticket_promedio or 0) for r in rows}
+        return jsonify({
+            "labels": MESES,
+            "data": [mes_map.get(i + 1, 0) for i in range(12)],
+            "anio": anio,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Ingresos por Material (Dashboard Productos — gráfico 5)
+# ─────────────────────────────────────────────────────────────────────────────
+@dashboard_bp.route("/api/ingresos_material")
+@login_required
+@role_required("gerente", "admin")
+def api_ingresos_material():
+    try:
+        rows = (
+            db.session.query(
+                Producto.material.label("material"),
+                func.sum(DetalleVenta.subtotal).label("ingresos")
+            )
+            .join(DetalleVenta, DetalleVenta.IDProducto == Producto.IDProducto)
+            .filter(Producto.material.isnot(None))
+            .filter(Producto.material != "")
+            .group_by(Producto.material)
+            .order_by(func.sum(DetalleVenta.subtotal).desc())
+            .limit(6)
+            .all()
+        )
+        return jsonify({
+            "labels": [r.material for r in rows],
+            "ingresos": [float(r.ingresos or 0) for r in rows],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API: Ventas por Talla (Dashboard Productos — gráfico 6)
+# ─────────────────────────────────────────────────────────────────────────────
+@dashboard_bp.route("/api/ventas_talla")
+@login_required
+@role_required("gerente", "admin")
+def api_ventas_talla():
+    try:
+        rows = (
+            db.session.query(
+                Producto.talla.label("talla"),
+                func.sum(DetalleVenta.cantidad).label("unidades")
+            )
+            .join(DetalleVenta, DetalleVenta.IDProducto == Producto.IDProducto)
+            .filter(Producto.talla.isnot(None))
+            .filter(Producto.talla != "")
+            .group_by(Producto.talla)
+            .order_by(func.sum(DetalleVenta.cantidad).desc())
+            .limit(10)
+            .all()
+        )
+        return jsonify({
+            "labels": [r.talla for r in rows],
+            "unidades": [int(r.unidades or 0) for r in rows],
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

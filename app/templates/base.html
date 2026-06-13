@@ -42,28 +42,28 @@
 
     <nav>
       <!-- General -->
+      {% if current_user.rol != 'gerente' %}
       <div class="nav-group">
         <div class="nav-group-label">General</div>
+        <a href="{{ url_for('public.index') }}" class="nav-item">
+          <i class="fas fa-store nav-icon"></i> Tienda pública
+        </a>
         {% if current_user.rol == 'admin' %}
         <a href="{{ url_for('dashboard.ejecutivo') }}"
            class="nav-item {% if request.endpoint == 'dashboard.ejecutivo' %}active{% endif %}">
           <i class="fas fa-home nav-icon"></i> Inicio
         </a>
-        {% elif current_user.rol == 'vendedor' %}
+        {% elif current_user.rol == 'empleado' %}
         <a href="{{ url_for('ventas.registrar') }}"
            class="nav-item {% if request.endpoint == 'ventas.registrar' %}active{% endif %}">
           <i class="fas fa-home nav-icon"></i> Inicio
         </a>
-        {% elif current_user.rol == 'almacen' %}
-        <a href="{{ url_for('inventario.productos') }}"
-           class="nav-item {% if request.endpoint == 'inventario.productos' %}active{% endif %}">
-          <i class="fas fa-home nav-icon"></i> Inicio
-        </a>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- Ventas -->
-      {% if current_user.rol in ['vendedor', 'admin'] %}
+      {% if current_user.rol in ['empleado', 'admin'] %}{# Ventas: solo empleado opera caja. Gerente no ve este menú. #}
       <div class="nav-group">
         <div class="nav-group-label">Ventas</div>
         <a href="{{ url_for('ventas.registrar') }}"
@@ -78,7 +78,7 @@
       {% endif %}
 
       <!-- Inventario -->
-      {% if current_user.rol in ['almacen', 'admin'] %}
+      {% if current_user.rol in ['empleado', 'admin'] %}
       <div class="nav-group">
         <div class="nav-group-label">Inventario</div>
         <a href="{{ url_for('inventario.productos') }}"
@@ -92,8 +92,8 @@
       </div>
       {% endif %}
 
-      <!-- Dashboard (solo admin) -->
-      {% if current_user.rol == 'admin' %}
+      <!-- Dashboard (gerente/admin) -->
+      {% if current_user.rol in ['gerente', 'admin'] %}
       <div class="nav-group">
         <div class="nav-group-label">Analytics</div>
         <a href="{{ url_for('dashboard.ejecutivo') }}"

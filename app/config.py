@@ -14,3 +14,9 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+
+    # Códigos privados para registrar cuentas internas.
+    # En producción se recomienda cambiarlos desde un archivo .env.
+    ACCESS_CODE_EMPLEADO = os.getenv("ACCESS_CODE_EMPLEADO", None)
+    ACCESS_CODE_GERENTE = os.getenv("ACCESS_CODE_GERENTE", None)
+    ACCESS_CODE_ADMIN = os.getenv("ACCESS_CODE_ADMIN", None)

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sport Zone — Equipamiento deportivo premium. Tecnología, estilo y rendimiento en un solo lugar.">
+    <meta name="theme-color" content="#E53935">
+    <title>{% block title %}Sport Zone | Elevando el rendimiento{% endblock %}</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='public/images/logo.png') }}" type="image/png">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='public/css/styles.css') }}">
+</head>
+<body>
+
+    <!-- Particle Background Canvas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- ========== NAVBAR PREMIUM ========== -->
+    <nav class="navbar" id="main-navbar">
+        <div class="nav-brand">
+            <a href="{{ url_for('public.index') }}">
+                <img src="{{ url_for('static', filename='public/images/logo.png') }}" alt="Sport Zone Logo">
+            </a>
+            <span class="nav-brand-text">SPORT ZONE</span>
+        </div>
+
+        <div class="nav-links" id="nav-links">
+            <a href="{{ url_for('public.index') }}">Inicio</a>
+            <a href="{{ url_for('public.productos') }}">Catálogo</a>
+            <a href="{{ url_for('public.club') }}">Club</a>
+            <a href="{{ url_for('public.ofertas') }}">Ofertas</a>
+            <a href="{{ url_for('public.sedes') }}">Sedes</a>
+            <a href="{{ url_for('public.mensajes') }}">Contacto</a>
+            {% if current_user.is_authenticated %}
+                {% if current_user.rol == 'usuario' %}
+                    <a href="{{ url_for('auth.logout') }}" class="nav-login-btn">Cerrar sesión</a>
+                {% elif current_user.rol == 'empleado' %}
+                    <a href="{{ url_for('ventas.registrar') }}" class="nav-login-btn">Panel empleado</a>
+                {% elif current_user.rol == 'gerente' %}
+                    <a href="{{ url_for('dashboard.ejecutivo') }}" class="nav-login-btn">Panel gerente</a>
+                {% elif current_user.rol == 'admin' %}
+                    <a href="{{ url_for('dashboard.ejecutivo') }}" class="nav-login-btn">Panel admin</a>
+                {% endif %}
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="nav-login-btn">Iniciar sesión</a>
+                <a href="{{ url_for('auth.registro') }}" class="nav-login-btn nav-register-btn">Registrarse</a>
+            {% endif %}
+        </div>
+
+        <div class="nav-hamburger" id="nav-hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <div class="nav-spacer"></div>
+
+    <!-- ========== CONTENIDO PRINCIPAL ========== -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ========== FOOTER PREMIUM ========== -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <span class="nav-brand-text" style="font-size: 1.5rem;">SPORT ZONE</span>
+                <p>Elevando el rendimiento a su máxima expresión. Equipamiento deportivo de alta calidad para atletas de todos los niveles.</p>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Navegación</h4>
+                <div class="footer-links">
+                    <a href="{{ url_for('public.index') }}">Inicio</a>
+                    <a href="{{ url_for('public.productos') }}">Catálogo</a>
+                    <a href="{{ url_for('public.club') }}">Club Sport Zone</a>
+                    <a href="{{ url_for('public.ofertas') }}">Ofertas</a>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Empresa</h4>
+                <div class="footer-links">
+                    <a href="{{ url_for('public.sedes') }}">Nuestras Sedes</a>
+                    <a href="{{ url_for('public.mensajes') }}">Contacto</a>
+                    <a href="#">Términos y Condiciones</a>
+                    <a href="#">Política de Privacidad</a>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Contacto</h4>
+                <div class="footer-links">
+                    <a href="mailto:info@sportzone.com">info@sportzone.com</a>
+                    <a href="tel:+59178001234">+591 78001234</a>
+                    <a href="#">Lun - Sáb: 9:00 - 21:00</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 Sport Zone. Todos los derechos reservados.</p>
+            <div class="footer-social">
+                <a href="#" aria-label="Facebook">FB</a>
+                <a href="#" aria-label="Instagram">IG</a>
+                <a href="#" aria-label="Twitter">X</a>
+                <a href="#" aria-label="TikTok">TK</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='public/js/script.js') }}"></script>
+</body>
+</html>

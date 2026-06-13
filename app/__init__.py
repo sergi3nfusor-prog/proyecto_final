@@ -20,6 +20,12 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    if not app.config.get("SECRET_KEY") or app.config["SECRET_KEY"] == "dev-key-insecure-change-me":
+        raise ValueError("SECRET_KEY no está configurada o usa el valor por defecto inseguro. Define SECRET_KEY en el archivo .env antes de iniciar la aplicación.")
+
+    if not app.config.get("ACCESS_CODE_EMPLEADO") or not app.config.get("ACCESS_CODE_GERENTE") or not app.config.get("ACCESS_CODE_ADMIN"):
+        app.logger.warning("No todos los ACCESS_CODE (empleado, gerente, admin) están configurados. No se podrán crear esas cuentas.")
+
     # ── Inicializar extensiones ───────────────────────────────────────────────
     db.init_app(app)
     migrate.init_app(app, db)
@@ -37,20 +43,22 @@ def create_app():
         return db.session.get(UsuarioEmpleado, int(user_id))
 
     # ── Registrar Blueprints ──────────────────────────────────────────────────
+    from .public.routes    import public_bp
     from .auth.routes      import auth_bp
     from .ventas.routes    import ventas_bp
     from .inventario.routes import inventario_bp
     from .dashboard.routes import dashboard_bp
 
+    app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(ventas_bp,    url_prefix="/ventas")
     app.register_blueprint(inventario_bp, url_prefix="/inventario")
     app.register_blueprint(dashboard_bp,  url_prefix="/dashboard")
 
     # ── Ruta raíz ────────────────────────────────────────────────────────────
-    @app.route("/")
-    def index():
-        return redirect(url_for("dashboard.ejecutivo"))
+    @app.route("/home")
+    def home():
+        return redirect(url_for("public.index"))
 
     # ── CLI: flask create-admin ───────────────────────────────────────────────
     @app.cli.command("create-admin")
@@ -80,7 +88,7 @@ def create_app():
     # ── CLI: flask fix-users ──────────────────────────────────────────────────
     @app.cli.command("fix-users")
     def fix_users():
-        """Hashea contraseñas planas de usuarios existentes y les asigna el rol vendedor."""
+        """Hashea contraseñas planas de usuarios existentes. Solo asigna rol 'empleado' si el usuario no tiene ningún rol."""
         from .models import UsuarioEmpleado
         
         usuarios = UsuarioEmpleado.query.all()
@@ -91,11 +99,11 @@ def create_app():
             if not u.contraseniaUsuario.startswith("pbkdf2:") and not u.contraseniaUsuario.startswith("scrypt:"):
                 # Capturamos la contraseña actual, que está en texto plano, y la encriptamos
                 u.contraseniaUsuario = generate_password_hash(u.contraseniaUsuario)
-                if not u.rol or u.rol not in ["admin", "vendedor", "almacen"]:
-                    u.rol = "vendedor"  # Rol por defecto para que puedan acceder a la caja
+                if not u.rol:
+                    u.rol = "empleado"  # Rol por defecto para personal interno
                 actualizados += 1
                 
         db.session.commit()
-        click.echo(f"[✓] Éxito: {actualizados} usuarios existentes han sido encriptados y asignados como vendedores.")
+        click.echo(f"[✓] Éxito: {actualizados} usuarios existentes han sido encriptados y asignados como empleados.")
 
     return app
